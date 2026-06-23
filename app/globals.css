@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-inter: "Inter", sans-serif;
+  --font-playfair: "Playfair Display", serif;
+}
+
+@layer base {
+  body {
+    @apply bg-floreer-bg text-floreer-dark font-sans;
+  }
+  h1, h2, h3 {
+    @apply font-serif font-normal;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-floreer-dark text-floreer-bg text-xs font-medium px-7 py-3 rounded tracking-wide hover:opacity-90 transition-opacity;
+  }
+  .btn-outline {
+    @apply bg-transparent text-floreer-dark border border-floreer-border text-xs px-7 py-3 rounded hover:bg-floreer-card transition-colors;
+  }
+  .btn-gold {
+    @apply bg-floreer-gold text-white text-xs font-medium px-7 py-3 rounded tracking-wide hover:opacity-90 transition-opacity;
+  }
+  .label-tag {
+    @apply text-[10px] tracking-[2.5px] uppercase text-floreer-gold font-medium flex items-center gap-2;
+  }
+  .label-tag::before {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 0.5px;
+    background: theme("colors.floreer.gold");
+  }
+  .card {
+    @apply bg-floreer-bg border border-floreer-border rounded-xl;
+  }
+}
