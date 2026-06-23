@@ -2,12 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY! // chave de serviço (não a anon)
-);
+export const dynamic = "force-dynamic";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_KEY!
+  );
+}
+
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,6 +32,8 @@ export async function POST(req: NextRequest) {
 
       if (pagamento.status === "approved") {
         const { curso_slug, email_aluna } = pagamento.metadata;
+        const supabase = getSupabase();
+        const resend = getResend();
 
         // Busca ou cria a aluna no banco
         let { data: usuario } = await supabase
