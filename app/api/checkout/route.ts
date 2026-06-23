@@ -1,16 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurso } from "../../../lib/cursos";
+import { getCurso, florCompleta } from "../../../lib/cursos";
 
 export async function POST(req: NextRequest) {
   try {
     const { cursoSlug, email, nome } = await req.json();
 
-    const curso = getCurso(cursoSlug);
-    if (!curso) {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+    // Verifica se é o bundle Flor Completa
+    const isBundle = cursoSlug === "flor-completa";
+    const titulo = isBundle ? "Floreer — Flor Completa (Trilha Completa)" : "";
+    const preco = isBundle ? florCompleta.preco / 100 : 0;
+
+    const curso = isBundle ? null : getCurso(cursoSlug);
+    if (!isBundle && !curso) {
       return NextResponse.json({ erro: "Curso não encontrado" }, { status: 404 });
     }
-
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
     // Cria preferência no Mercado Pago
     const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
@@ -22,12 +27,12 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         items: [
           {
-            id: curso.slug,
-            title: `Floreer — Curso ${curso.nome}`,
-            description: curso.desc,
+            id: cursoSlug,
+            title: isBundle ? titulo : `Floreer — Curso ${curso!.nome}`,
+            description: isBundle ? florCompleta.desc : curso!.desc,
             quantity: 1,
             currency_id: "BRL",
-            unit_price: curso.preco / 100, // em reais
+            unit_price: isBundle ? preco : curso!.preco / 100,
           },
         ],
         payer: { email, name: nome },

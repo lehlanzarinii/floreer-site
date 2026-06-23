@@ -46,8 +46,8 @@ const emBreve = [
 const pilares = [
   {
     num: "01",
-    titulo: "Progressão real",
-    texto: "Cada curso constrói sobre o anterior. Você cresce junto com a plataforma.",
+    titulo: "Conteúdo com método",
+    texto: "Cada curso é estruturado do básico ao avançado — com profundidade real, não conteúdo raso.",
   },
   {
     num: "02",
@@ -62,7 +62,7 @@ const pilares = [
   {
     num: "04",
     titulo: "Comunidade",
-    texto: "Alunas que aprendem juntas evoluem mais rápido.",
+    texto: "Alunas conectadas pelo mesmo propósito crescem juntas. Acesso ao grupo exclusivo de alunas Floreer.",
   },
 ];
 
@@ -79,7 +79,7 @@ export default function Home() {
             Aprenda<br />a arte<br />da <em>beleza</em>
           </h1>
           <p className="text-floreer-muted text-sm leading-[1.8] max-w-sm mb-9">
-            Uma plataforma construída para quem leva beleza a sério — do primeiro traço de delineado à carreira profissional.
+            Uma plataforma de educação em beleza — construída para quem quer aprender com método, profundidade e estética.
           </p>
           <div className="flex gap-3 flex-wrap">
             <Link href="/cursos" className="btn-primary">Ver cursos</Link>
@@ -119,8 +119,8 @@ export default function Home() {
       <section className="px-6 md:px-10 py-16">
         <div className="flex items-baseline justify-between mb-10">
           <div>
-            <div className="label-tag mb-2">Trilha de maquiagem</div>
-            <h2 className="text-3xl text-floreer-dark">Três cursos, uma jornada completa</h2>
+            <div className="label-tag mb-2">Maquiagem</div>
+            <h2 className="text-3xl text-floreer-dark">Três cursos, do zero ao profissional</h2>
           </div>
           <Link href="/cursos" className="text-[11px] text-floreer-muted underline underline-offset-2 hidden md:block">
             Ver todos
@@ -172,7 +172,7 @@ export default function Home() {
             Uma plataforma que cresce com você
           </h2>
           <p className="text-[#7A756E] text-sm leading-[1.8]">
-            Não é um curso avulso numa plataforma de outra pessoa. A Floreer é um espaço construído com identidade, método e continuidade — do primeiro acesso à carreira.
+            Não é um curso avulso numa plataforma de outra pessoa. A Floreer é um espaço construído com identidade, método e cuidado — onde cada área da beleza tem o espaço que merece.
           </p>
         </div>
         <div className="flex flex-col gap-6">

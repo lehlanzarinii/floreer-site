@@ -9,7 +9,7 @@ const progresso: Record<string, number> = { broto: 35 }; // % concluído por cur
 const ultimaAula = { curso: "broto", modulo: "M4", titulo: "Base, corretivo e olheiras", aula: "4.3" };
 
 export default function AlunoPage() {
-  const [nomeAluna, setNomeAluna] = useState("Maria Letícia");
+  const [nomeAluna, setNomeAluna] = useState("Aluna");
 
   return (
     <div className="min-h-screen bg-floreer-bg flex">
