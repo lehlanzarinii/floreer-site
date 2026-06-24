@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         metadata: { curso_slug: cursoSlug, email_aluna: email },
         payment_methods: {
           excluded_payment_types: [],
-          installments: 12,
+          installments: 6,
         },
       }),
     });
