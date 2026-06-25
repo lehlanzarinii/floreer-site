@@ -1,21 +1,59 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { supabase } from "../../lib/supabase";
 import { cursos } from "../../lib/cursos";
 
-// Dados simulados — em produção vêm do Supabase
-const cursosComprados = ["broto"]; // cursos que a aluna tem acesso
-const progresso: Record<string, number> = { broto: 35 }; // % concluído por curso
-const ultimaAula = { curso: "broto", modulo: "M4", titulo: "Base, corretivo e olheiras", aula: "4.3" };
-
 export default function AlunoPage() {
-  const [nomeAluna, setNomeAluna] = useState("Aluna");
+  const router = useRouter();
+  const [nomeAluna, setNomeAluna] = useState("");
+  const [cursosComprados, setCursosComprados] = useState<string[]>([]);
+  const [carregando, setCarregando] = useState(true);
+
+  useEffect(() => {
+    async function verificarSessao() {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        router.push("/aluno/login");
+        return;
+      }
+
+      const nome = session.user.user_metadata?.nome || session.user.email?.split("@")[0] || "Aluna";
+      setNomeAluna(nome);
+
+      // Buscar compras aprovadas
+      const { data: compras } = await supabase
+        .from("compras")
+        .select("curso_slug")
+        .eq("usuario_id", session.user.id)
+        .eq("status", "aprovado");
+
+      setCursosComprados(compras?.map((c) => c.curso_slug) || []);
+      setCarregando(false);
+    }
+
+    verificarSessao();
+  }, [router]);
+
+  async function sair() {
+    await supabase.auth.signOut();
+    router.push("/aluno/login");
+  }
+
+  if (carregando) {
+    return (
+      <div className="min-h-screen bg-floreer-bg flex items-center justify-center">
+        <p className="text-sm text-floreer-muted">Carregando...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-floreer-bg flex">
       {/* Sidebar */}
       <aside className="w-52 border-r border-floreer-border flex flex-col py-7 hidden md:flex flex-shrink-0">
-        {/* Logo */}
         <Link href="/" className="flex items-center gap-2 px-5 mb-10">
           <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
             <circle cx="11" cy="8" r="3.5" stroke="#B8864A" strokeWidth="1" />
@@ -24,14 +62,11 @@ export default function AlunoPage() {
           <span className="font-serif text-[15px] text-floreer-dark tracking-[3px]">FLOREER</span>
         </Link>
 
-        {/* Menu */}
         <div className="px-4 mb-8">
           <p className="text-[9px] tracking-[2px] uppercase text-floreer-muted mb-2.5 px-2">Menu</p>
           {[
             { href: "/aluno", label: "Painel", icon: "⊞" },
-            { href: "/aluno/cursos", label: "Meus cursos", icon: "📚" },
-            { href: "/aluno/certificados", label: "Certificados", icon: "🎓" },
-            { href: "/aluno/configuracoes", label: "Configurações", icon: "⚙" },
+            { href: "/cursos", label: "Ver cursos", icon: "📚" },
           ].map((item) => (
             <Link
               key={item.href}
@@ -44,11 +79,9 @@ export default function AlunoPage() {
           ))}
         </div>
 
-        {/* Progresso na sidebar */}
         <div className="px-5 border-t border-floreer-border pt-5 mt-auto">
-          <p className="text-[9px] tracking-[2px] uppercase text-floreer-muted mb-4">Meu progresso</p>
+          <p className="text-[9px] tracking-[2px] uppercase text-floreer-muted mb-4">Meus cursos</p>
           {cursos.map((c) => {
-            const pct = progresso[c.slug] ?? null;
             const temAcesso = cursosComprados.includes(c.slug);
             return (
               <div key={c.slug} className="mb-3">
@@ -57,63 +90,36 @@ export default function AlunoPage() {
                     {!temAcesso && <span>🔒</span>}
                     {c.nome}
                   </span>
-                  <span className={temAcesso ? "text-floreer-muted" : "text-[#C8C0B8]"}>
-                    {pct !== null ? `${pct}%` : "—"}
-                  </span>
                 </div>
-                <div className="h-[2px] bg-floreer-border rounded-full">
-                  {pct !== null && (
-                    <div className="h-[2px] bg-floreer-gold rounded-full" style={{ width: `${pct}%` }} />
-                  )}
-                </div>
+                <div className="h-[2px] bg-floreer-border rounded-full" />
               </div>
             );
           })}
+          <button
+            onClick={sair}
+            className="text-[10px] text-floreer-muted hover:text-floreer-dark mt-4 block"
+          >
+            Sair →
+          </button>
         </div>
       </aside>
 
       {/* Main */}
       <main className="flex-1 p-6 md:p-9 overflow-auto">
-        {/* Header */}
         <div className="flex items-center justify-between mb-7">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="inline-block w-3 h-px bg-floreer-gold" />
-              <span className="text-[10px] tracking-[2px] uppercase text-floreer-gold">Bem-vinda de volta</span>
+              <span className="text-[10px] tracking-[2px] uppercase text-floreer-gold">Bem-vinda</span>
             </div>
             <h1 className="font-serif text-3xl text-floreer-dark">Olá, {nomeAluna}</h1>
           </div>
-          <div className="w-9 h-9 rounded-full bg-floreer-broto flex items-center justify-center text-xs font-medium text-[#3B2010]">
-            {nomeAluna.split(" ").map((n) => n[0]).slice(0, 2).join("")}
-          </div>
-        </div>
-
-        {/* Continue */}
-        <div className="bg-floreer-card border border-floreer-border rounded-xl p-5 flex items-center gap-5 mb-8">
-          <div
-            className="w-12 h-12 rounded-lg flex-shrink-0 flex items-end p-2"
-            style={{ background: "#F0C9B8" }}
+          <button
+            onClick={sair}
+            className="text-xs text-floreer-muted hover:text-floreer-dark"
           >
-            <span className="font-serif text-[12px] italic text-[#3B2010]">Broto</span>
-          </div>
-          <div className="flex-1">
-            <p className="text-[9px] tracking-[1.5px] uppercase text-floreer-muted mb-1">Continue de onde parou</p>
-            <p className="text-sm font-medium text-floreer-dark mb-2">
-              {ultimaAula.modulo} · {ultimaAula.titulo}
-            </p>
-            <div className="h-[2px] bg-floreer-border rounded-full">
-              <div className="h-[2px] bg-floreer-gold rounded-full" style={{ width: `${progresso.broto}%` }} />
-            </div>
-            <p className="text-[10px] text-floreer-muted mt-1">
-              {progresso.broto}% concluído · Aula {ultimaAula.aula} pendente
-            </p>
-          </div>
-          <Link
-            href="/aluno/broto/aula"
-            className="btn-primary flex-shrink-0 text-center"
-          >
-            Continuar
-          </Link>
+            Sair
+          </button>
         </div>
 
         {/* Meus cursos */}
@@ -123,7 +129,6 @@ export default function AlunoPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
           {cursos.map((c) => {
             const temAcesso = cursosComprados.includes(c.slug);
-            const pct = progresso[c.slug] ?? 0;
             return (
               <div key={c.slug} className={`card overflow-hidden ${!temAcesso ? "opacity-70" : ""}`}>
                 <div
@@ -144,17 +149,9 @@ export default function AlunoPage() {
                 </div>
                 <div className="p-4 bg-floreer-bg">
                   {temAcesso ? (
-                    <>
-                      <div className="h-[2px] bg-floreer-border rounded-full mb-2">
-                        <div className="h-[2px] bg-floreer-gold rounded-full" style={{ width: `${pct}%` }} />
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-[10px] text-floreer-muted">{pct}% concluído</span>
-                        <span className="text-[9px] tracking-[1px] uppercase text-floreer-gold">
-                          {pct === 0 ? "Disponível" : pct === 100 ? "Concluído" : "Em curso"}
-                        </span>
-                      </div>
-                    </>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-floreer-gold uppercase tracking-wide">Acesso liberado</span>
+                    </div>
                   ) : (
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] text-floreer-muted">{c.nivel}</span>
@@ -163,7 +160,7 @@ export default function AlunoPage() {
                         className="text-[10px] bg-floreer-dark text-floreer-bg px-3 py-1.5 rounded"
                       >
                         Adquirir
-                      </Link>
+      </Link>
                     </div>
                   )}
                 </div>
@@ -172,58 +169,13 @@ export default function AlunoPage() {
           })}
         </div>
 
-        {/* Últimas aulas */}
-        <p className="text-[10px] tracking-[2px] uppercase text-floreer-muted mb-4 flex items-center gap-2">
-          <span className="inline-block w-3 h-px bg-floreer-muted" /> Módulo 4 · Base, corretivo e olheiras
-        </p>
-        <div className="card overflow-hidden mb-8">
-          <div className="px-5 py-3.5 border-b border-floreer-border">
-            <p className="text-xs font-medium text-floreer-dark">Broto — módulo atual</p>
+        {cursosComprados.length === 0 && (
+          <div className="card p-8 text-center">
+            <p className="font-serif text-xl text-floreer-dark mb-2">Você ainda não tem cursos</p>
+            <p className="text-sm text-floreer-muted mb-5">Explore nossos cursos e comece sua jornada na beleza.</p>
+            <Link href="/cursos" className="btn-primary inline-block">Ver cursos</Link>
           </div>
-          {[
-            { num: "4.1", titulo: "Escolhendo a base certa para o seu subtom", status: "done" },
-            { num: "4.2", titulo: "Técnica de aplicação — esponja vs pincel", status: "done" },
-            { num: "4.3", titulo: "Corretivo e o triângulo invertido", status: "next" },
-            { num: "4.4", titulo: "Olheiras — tipo, cor e cobertura", status: "locked" },
-          ].map((aula, i, arr) => (
-            <div
-              key={aula.num}
-              className={`flex items-center gap-4 px-5 py-3.5 ${i < arr.length - 1 ? "border-b border-floreer-border" : ""}`}
-            >
-              <span className="font-serif text-[11px] italic text-floreer-gold w-6">{aula.num}</span>
-              <span className="text-xs text-floreer-dark flex-1">{aula.titulo}</span>
-              <span
-                className={`text-[9px] tracking-[1px] uppercase px-2.5 py-1 rounded-full ${
-                  aula.status === "done"
-                    ? "bg-floreer-gold/10 text-floreer-gold"
-                    : aula.status === "next"
-                    ? "bg-floreer-dark text-floreer-bg"
-                    : "bg-floreer-border text-floreer-muted"
-                }`}
-              >
-                {aula.status === "done" ? "Concluída" : aula.status === "next" ? "Próxima" : "🔒 Bloqueada"}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* Certificado */}
-        <p className="text-[10px] tracking-[2px] uppercase text-floreer-muted mb-4 flex items-center gap-2">
-          <span className="inline-block w-3 h-px bg-floreer-muted" /> Certificado
-        </p>
-        <div className="card p-4 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-floreer-gold/10 flex items-center justify-center text-xl flex-shrink-0">
-            🎓
-          </div>
-          <div className="flex-1">
-            <p className="text-xs font-medium text-floreer-dark mb-0.5">Certificado de conclusão — Broto</p>
-            <p className="text-[11px] text-floreer-muted">Disponível ao concluir 100% do curso · gerado em PDF</p>
-          </div>
-          <div className="text-right flex-shrink-0">
-            <p className="text-sm font-medium text-floreer-gold">{progresso.broto}%</p>
-            <p className="text-[9px] text-floreer-muted">concluído</p>
-          </div>
-        </div>
+        )}
       </main>
     </div>
   );
