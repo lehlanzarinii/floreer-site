@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
-import { supabase } from "../../lib/supabase";
 
 export default function ContatoPage() {
   const [nome, setNome] = useState("");
@@ -18,9 +17,13 @@ export default function ContatoPage() {
     setEnviando(true);
     setErro("");
 
-    const { error } = await supabase.from("mensagens").insert({ nome, email, mensagem });
+    const res = await fetch("/api/contato", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome, email, mensagem }),
+    });
 
-    if (error) {
+    if (!res.ok) {
       setErro("Erro ao enviar. Tente novamente ou fale pelo Instagram.");
     } else {
       setSucesso(true);
