@@ -4,7 +4,7 @@ import { Resend } from "resend";
 
 export const dynamic = "force-dynamic";
 
-function getSupabase() {
+function getAdminSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_KEY!
@@ -25,48 +25,53 @@ export async function POST(req: NextRequest) {
       const pagamentoRes = await fetch(
         `https://api.mercadopago.com/v1/payments/${body.data.id}`,
         {
-          headers: { Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}` },
+          headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` },
         }
       );
       const pagamento = await pagamentoRes.json();
 
       if (pagamento.status === "approved") {
-        const { curso_slug, email_aluna } = pagamento.metadata;
-        const supabase = getSupabase();
-        const resend = getResend();
+        const { curso_slug, email_aluna } = pagamento.metadata || {};
 
-        // Busca ou cria a aluna no banco
-        let { data: usuario } = await supabase
-          .from("usuarios")
-          .select("id")
-          .eq("email", email_aluna)
-          .single();
-
-        if (!usuario) {
-          // Cria conta via Supabase Auth
-          const { data: authData } = await supabase.auth.admin.createUser({
-            email: email_aluna,
-            email_confirm: true,
-          });
-          usuario = authData.user;
+        if (!email_aluna || !curso_slug) {
+          console.warn("Webhook: metadata ausente no pagamento", body.data.id);
+          return NextResponse.json({ ok: true });
         }
 
-        if (usuario) {
-          // Registra a compra
-          await supabase.from("compras").insert({
-            usuario_id: usuario.id,
-            curso_slug,
-            status: "aprovado",
-            pagamento_id: body.data.id,
-          });
+        const supabase = getAdminSupabase();
+        const resend = getResend();
 
-          // Envia e-mail de boas-vindas
-          await resend.emails.send({
-            from: "Floreer <ola@floreer.com.br>",
-            to: email_aluna,
-            subject: `Seu acesso ao ${curso_slug.charAt(0).toUpperCase() + curso_slug.slice(1)} está pronto ✦ Floreer`,
-            html: emailBoasVindas(email_aluna, curso_slug),
-          });
+        // Busca a usuária pelo email
+        const { data: listData } = await supabase.auth.admin.listUsers();
+        const usuario = listData?.users?.find((u) => u.email === email_aluna);
+
+        if (usuario) {
+          // Verifica se compra já foi registrada (idempotência)
+          const { data: compraExistente } = await supabase
+            .from("compras")
+            .select("id")
+            .eq("pagamento_id", String(body.data.id))
+            .single();
+
+          if (!compraExistente) {
+            // Registra a compra
+            await supabase.from("compras").insert({
+              usuario_id: usuario.id,
+              curso_slug,
+              status: "aprovado",
+              pagamento_id: String(body.data.id),
+            });
+
+            // Envia e-mail de boas-vindas
+            await resend.emails.send({
+              from: "Floreer <ola@floreer.com.br>",
+              to: email_aluna,
+              subject: `Seu acesso ao ${nomeCurso(curso_slug)} está pronto ✦ Floreer`,
+              html: emailBoasVindas(email_aluna, curso_slug),
+            });
+          }
+        } else {
+          console.warn("Webhook: usuária não encontrada para email", email_aluna);
         }
       }
     }
@@ -78,29 +83,42 @@ export async function POST(req: NextRequest) {
   }
 }
 
+function nomeCurso(slug: string): string {
+  const nomes: Record<string, string> = {
+    broto: "Broto",
+    botao: "Botão",
+    plena: "Plena",
+    "flor-completa": "Flor Completa",
+  };
+  return nomes[slug] || slug.charAt(0).toUpperCase() + slug.slice(1);
+}
+
 function emailBoasVindas(email: string, cursoSlug: string): string {
-  const nomeCurso = cursoSlug.charAt(0).toUpperCase() + cursoSlug.slice(1);
+  const nome = nomeCurso(cursoSlug);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://floreer.com.br";
 
   return `
-    <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; color: #1A1815;">
-      <p style="font-size: 18px; letter-spacing: 4px; margin-bottom: 32px;">FLOREER</p>
-      <p style="font-size: 15px; margin-bottom: 12px;">Olá!</p>
-      <p style="font-size: 14px; line-height: 1.7; color: #7A756E; margin-bottom: 24px;">
-        Sua compra foi confirmada e seu acesso ao <strong style="color: #1A1815;">Curso ${nomeCurso}</strong>
-        está liberado agora mesmo. Clique abaixo para entrar na plataforma e começar sua jornada.
+    <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; color: #1A1815; background: #FAFAF8;">
+      <p style="font-size: 16px; letter-spacing: 4px; margin-bottom: 32px; color: #1A1815;">FLOREER</p>
+      <p style="font-size: 15px; margin-bottom: 12px;">Olá! Seja bem-vinda ✨</p>
+      <p style="font-size: 14px; line-height: 1.7; color: #7A756E; margin-bottom: 28px;">
+        Sua compra foi confirmada e seu acesso ao <strong style="color: #1A1815;">Curso ${nome}</strong> está liberado agora mesmo.
+        Clique abaixo para entrar na plataforma e começar sua jornada.
       </p>
-      <a href="${siteUrl}/aluno" style="display: inline-block; background: #1A1815; color: #FAFAF8; padding: 12px 28px; text-decoration: none; font-size: 12px; letter-spacing: 1px; border-radius: 4px; margin-bottom: 28px;">
-        Acessar meu curso
+      <a href="${siteUrl}/aluno" style="display: inline-block; background: #1A1815; color: #FAFAF8; padding: 13px 30px; text-decoration: none; font-size: 12px; letter-spacing: 1.5px; border-radius: 4px; margin-bottom: 32px;">
+        ACESSAR MEU CURSO
       </a>
-      <div style="background: #F3F0EB; border-radius: 8px; padding: 16px 20px; font-size: 12px; color: #7A756E; line-height: 1.8; margin-bottom: 24px;">
-        <strong style="color: #1A1815;">Seus dados de acesso</strong><br/>
+      <div style="background: #F3F0EB; border-radius: 8px; padding: 18px 22px; font-size: 12px; color: #7A756E; line-height: 1.9; margin-bottom: 28px;">
+        <strong style="color: #1A1815; display: block; margin-bottom: 4px;">Seus dados de acesso</strong>
         E-mail: ${email}<br/>
-        Senha: a que você criou no cadastro<br/>
-        Plataforma: <a href="${siteUrl}/aluno" style="color: #B8864A;">${siteUrl}/aluno</a>
+        Senha: a que você escolheu no cadastro<br/>
+        Acesso: <a href="${siteUrl}/aluno" style="color: #B8864A;">${siteUrl}/aluno</a>
       </div>
-      <p style="font-size: 11px; color: #C0B8B0; border-top: 0.5px solid #E3DDD6; padding-top: 16px;">
-        Floreer · floreer.com.br · Se tiver dúvidas, responda este e-mail.
+      <p style="font-size: 12px; color: #7A756E; line-height: 1.7; margin-bottom: 24px;">
+        Tem dúvidas? Responda este e-mail ou fale com a gente pelo Instagram <strong style="color: #1A1815;">@floreer_beleza</strong>.
+      </p>
+      <p style="font-size: 11px; color: #C0B8B0; border-top: 0.5px solid #E3DDD6; padding-top: 16px; margin-top: 8px;">
+        Floreer · floreer.com.br
       </p>
     </div>
   `;
