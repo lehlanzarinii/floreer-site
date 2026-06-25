@@ -43,7 +43,7 @@ export default function PrivacidadePage() {
 
           <div>
             <h2 className="text-base font-medium text-floreer-dark mb-2">6. Contato</h2>
-            <p>Dúvidas sobre esta política? Fale conosco pelo e-mail <span className="text-floreer-dark">floreer.beleza@gmail.com</span> ou pelo WhatsApp no perfil <span className="text-floreer-dark">@floreer_beleza</span>.</p>
+            <p>Dúvidas sobre esta política? Fale conosco pelo e-mail <span className="text-floreer-dark">floreer.beleza@gmail.com</span> ou pelo Instagram <span className="text-floreer-dark">@floreer_beleza</span>.</p>
           </div>
         </div>
       </section>

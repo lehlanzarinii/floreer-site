@@ -20,11 +20,11 @@ export default function ContatoPage() {
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-3 text-sm text-floreer-muted">
               <span className="text-floreer-gold">✉</span>
-              ola@floreer.com.br
+              floreer.beleza@gmail.com
             </div>
             <div className="flex items-center gap-3 text-sm text-floreer-muted">
               <span className="text-floreer-gold">📱</span>
-              @floreer.edu no Instagram
+              @floreer_beleza no Instagram
             </div>
           </div>
         </div>
