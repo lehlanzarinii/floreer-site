@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   // Enviar email de notificação
   await resend.emails.send({
     from: "Floreer <onboarding@resend.dev>",
-    to: "lelelanzarini@gmail.com",
+    to: "floreer.beleza@gmail.com",
     subject: `Nova mensagem de contato — ${nome}`,
     html: `
       <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 32px;">
