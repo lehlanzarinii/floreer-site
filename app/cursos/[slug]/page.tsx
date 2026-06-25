@@ -1,4 +1,4 @@
-import { getCurso, cursos } from "../../../lib/cursos";
+import { getCurso, cursos, florCompleta } from "../../../lib/cursos";
 import Navbar from "../../../components/Navbar";
 import Footer from "../../../components/Footer";
 import Link from "next/link";
@@ -161,7 +161,7 @@ export default function CursoPage({ params }: { params: { slug: string } }) {
       <section className="bg-floreer-card px-6 md:px-10 py-14">
         <div className="label-tag mb-2">Trilha completa de maquiagem</div>
         <h2 className="text-2xl text-floreer-dark mb-8">Continue evoluindo depois do {curso.nome}</h2>
-        <div className="grid md:grid-cols-3 gap-3">
+        <div className="grid md:grid-cols-3 gap-3 mb-8">
           {cursos.map((c) => (
             <Link key={c.slug} href={`/cursos/${c.slug}`} className="card overflow-hidden hover:shadow-sm transition-shadow">
               <div className="h-20 p-5 flex items-end" style={{ background: c.cor }}>
@@ -177,6 +177,30 @@ export default function CursoPage({ params }: { params: { slug: string } }) {
               </div>
             </Link>
           ))}
+        </div>
+
+        {/* FLOR COMPLETA */}
+        <div className="bg-floreer-dark rounded-xl overflow-hidden">
+          <div className="p-7 md:p-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div>
+              <span className="text-[9px] tracking-[2px] uppercase text-floreer-gold border border-floreer-gold/30 px-3 py-1 rounded-full mb-4 inline-block">
+                {florCompleta.desconto} de desconto
+              </span>
+              <h3 className="font-serif text-2xl italic text-floreer-bg mb-2">{florCompleta.nome}</h3>
+              <p className="text-sm text-[#7A756E] mb-3">{florCompleta.desc}</p>
+              <div className="flex items-baseline gap-3">
+                <span className="font-serif text-xl text-floreer-bg">{florCompleta.precoFormatado}</span>
+                <span className="text-sm text-[#5A5550] line-through">{florCompleta.precoOriginal}</span>
+                <span className="text-xs text-floreer-gold">economia de {florCompleta.economia}</span>
+              </div>
+            </div>
+            <Link
+              href="/flor-completa"
+              className="flex-shrink-0 inline-block bg-floreer-gold text-floreer-dark text-xs font-medium px-8 py-3.5 rounded tracking-wide hover:opacity-90 transition-opacity"
+            >
+              Ver a Flor Completa →
+            </Link>
+          </div>
         </div>
       </section>
 

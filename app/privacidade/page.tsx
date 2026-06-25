@@ -33,7 +33,7 @@ export default function PrivacidadePage() {
 
           <div>
             <h2 className="text-base font-medium text-floreer-dark mb-2">4. Seus direitos (LGPD)</h2>
-            <p>Você tem direito de acessar, corrigir, excluir ou solicitar a portabilidade dos seus dados a qualquer momento. Para exercer qualquer um desses direitos, entre em contato pelo e-mail: <span className="text-floreer-dark">ola@floreer.com.br</span></p>
+            <p>Você tem direito de acessar, corrigir, excluir ou solicitar a portabilidade dos seus dados a qualquer momento. Para exercer qualquer um desses direitos, entre em contato pelo e-mail: <span className="text-floreer-dark">floreer.beleza@gmail.com</span></p>
           </div>
 
           <div>
@@ -43,7 +43,7 @@ export default function PrivacidadePage() {
 
           <div>
             <h2 className="text-base font-medium text-floreer-dark mb-2">6. Contato</h2>
-            <p>Dúvidas sobre esta política? Fale conosco em <span className="text-floreer-dark">ola@floreer.com.br</span></p>
+            <p>Dúvidas sobre esta política? Fale conosco pelo e-mail <span className="text-floreer-dark">floreer.beleza@gmail.com</span> ou pelo WhatsApp no perfil <span className="text-floreer-dark">@floreer_beleza</span>.</p>
           </div>
         </div>
       </section>
