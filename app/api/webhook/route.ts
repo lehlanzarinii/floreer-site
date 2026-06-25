@@ -42,8 +42,9 @@ export async function POST(req: NextRequest) {
         const resend = getResend();
 
         // Busca a usuária pelo email
-        const { data: listData } = await supabase.auth.admin.listUsers();
-        const usuario = listData?.users?.find((u) => u.email === email_aluna);
+        const listResult = await supabase.auth.admin.listUsers();
+        const users = listResult.data?.users ?? [];
+        const usuario = users.find((u) => u.email === email_aluna);
 
         if (usuario) {
           // Verifica se compra já foi registrada (idempotência)
