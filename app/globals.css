@@ -39,5 +39,4 @@
   .card {
     @apply bg-floreer-bg border border-floreer-border rounded-xl;
   }
-
- 
+}
