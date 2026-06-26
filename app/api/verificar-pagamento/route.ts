@@ -58,8 +58,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Busca usuária
-    const listResult = await supabase.auth.admin.listUsers();
-    const usuario = listResult.data?.users?.find((u) => u.email === email_aluna);
+    const { data: listData } = await supabase.auth.admin.listUsers();
+    const usuario = (listData?.users ?? []).find((u) => u.email === email_aluna);
 
     if (!usuario) {
       return NextResponse.json({ status: "approved", semUsuario: true });
