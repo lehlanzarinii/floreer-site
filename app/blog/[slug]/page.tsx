@@ -12,7 +12,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
     <>
       <Navbar />
 
-      <section className="px-6 md:px-10 py-14 max-w-2xl">
+      <section className="px-6 md:px-10 py-14 max-w-2xl mx-auto w-full">
         {/* Voltar */}
         <Link
           href="/blog"

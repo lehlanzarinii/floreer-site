@@ -9,7 +9,7 @@
 
 @layer base {
   body {
-    @apply bg-floreer-bg text-floreer-dark font-sans;
+    @apply bg-floreer-bg text-floreer-dark font-sans overflow-x-hidden;
   }
   h1, h2, h3 {
     @apply font-serif font-normal;
