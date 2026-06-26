@@ -11,7 +11,7 @@ function getAdminSupabase() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { cursoSlug, email, nome, senha } = await req.json();
+    const { cursoSlug, email, nome, senha, telefone } = await req.json();
 
     const isBundle = cursoSlug === "flor-completa";
     const curso = isBundle ? null : getCurso(cursoSlug);
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       const { error: createError } = await supabase.auth.admin.createUser({
         email,
         password: senha,
-        user_metadata: { nome },
+        user_metadata: { nome, telefone },
         email_confirm: true,
       });
 
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
         },
         auto_return: "approved",
         notification_url: `${siteUrl}/api/webhook`,
-        metadata: { curso_slug: cursoSlug, email_aluna: email, nome_aluna: nome },
+        metadata: { curso_slug: cursoSlug, email_aluna: email, nome_aluna: nome, telefone_aluna: telefone },
         payment_methods: { installments: 6 },
       }),
     });

@@ -1,26 +1,32 @@
 "use client";
 import { useState } from "react";
 import { getCurso, florCompleta } from "../../../lib/cursos";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 
 export default function CheckoutPage() {
   const params = useParams();
-  const router = useRouter();
   const slug = params.slug as string;
 
-  // Suporta tanto cursos individuais quanto flor-completa
   const cursoIndividual = getCurso(slug);
   const cursoData = cursoIndividual ?? (slug === "flor-completa" ? florCompleta : null);
 
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [telefone, setTelefone] = useState("");
   const [passo, setPasso] = useState<"dados" | "pagamento">("dados");
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState("");
 
   if (!cursoData) return null;
+
+  function formatarTelefone(valor: string) {
+    const nums = valor.replace(/\D/g, "").slice(0, 11);
+    if (nums.length <= 2) return nums;
+    if (nums.length <= 7) return `(${nums.slice(0,2)}) ${nums.slice(2)}`;
+    return `(${nums.slice(0,2)}) ${nums.slice(2,7)}-${nums.slice(7)}`;
+  }
 
   async function handleContinuar(e: React.FormEvent) {
     e.preventDefault();
@@ -35,7 +41,7 @@ export default function CheckoutPage() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cursoSlug: cursoData!.slug, email, nome, senha }),
+        body: JSON.stringify({ cursoSlug: cursoData!.slug, email, nome, senha, telefone }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro || "Erro ao processar");
@@ -60,10 +66,7 @@ export default function CheckoutPage() {
           <p className="text-[10px] tracking-[2px] uppercase text-floreer-gold mb-4">Você está comprando</p>
           <div className="card p-5 mb-6">
             <div className="flex items-center gap-4 mb-5">
-              <div
-                className="w-10 h-10 rounded-lg flex items-end p-2 flex-shrink-0"
-                style={{ background: cursoData.cor }}
-              >
+              <div className="w-10 h-10 rounded-lg flex items-end p-2 flex-shrink-0" style={{ background: cursoData.cor }}>
                 <span className="font-serif text-[11px] italic" style={{ color: isCompleta ? "#B8864A" : "#3B2010" }}>
                   {cursoData.nome}
                 </span>
@@ -97,7 +100,6 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Garantias */}
           <div className="flex flex-col gap-3">
             {[
               "Acesso imediato após o pagamento",
@@ -146,6 +148,17 @@ export default function CheckoutPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="seu@email.com"
+                    className="w-full bg-floreer-card border border-floreer-border rounded-md px-4 py-2.5 text-sm text-floreer-dark placeholder:text-[#C0B8B0] focus:outline-none focus:border-floreer-gold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-floreer-muted tracking-wide mb-1.5">WHATSAPP</label>
+                  <input
+                    type="tel"
+                    required
+                    value={telefone}
+                    onChange={(e) => setTelefone(formatarTelefone(e.target.value))}
+                    placeholder="(11) 99999-9999"
                     className="w-full bg-floreer-card border border-floreer-border rounded-md px-4 py-2.5 text-sm text-floreer-dark placeholder:text-[#C0B8B0] focus:outline-none focus:border-floreer-gold"
                   />
                 </div>
