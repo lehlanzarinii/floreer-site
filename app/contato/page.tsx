@@ -46,15 +46,15 @@ export default function ContatoPage() {
             Fale com a gente
           </h1>
           <p className="text-sm text-floreer-muted leading-[1.9] mb-8">
-            Tem dúvidas sobre algum curso, precisa de suporte ou quer saber mais sobre a Floreer? Manda uma mensagem — respondemos em até 24 horas.
+            Tem duvidas sobre algum curso, precisa de suporte ou quer saber mais sobre a Floreer? Manda uma mensagem.
           </p>
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-3 text-sm text-floreer-muted">
-              <span className="text-floreer-gold">✉</span>
+              <span className="text-floreer-gold">@</span>
               floreer.beleza@gmail.com
             </div>
             <div className="flex items-center gap-3 text-sm text-floreer-muted">
-              <span className="text-floreer-gold">📱</span>
+              <span className="text-floreer-gold">ig</span>
               @floreer_beleza no Instagram
             </div>
           </div>
@@ -63,9 +63,9 @@ export default function ContatoPage() {
         <div className="card p-7">
           {sucesso ? (
             <div className="flex flex-col items-center justify-center text-center py-8 gap-3">
-              <span className="text-2xl">✓</span>
+              <span className="text-2xl">ok</span>
               <p className="font-serif text-xl text-floreer-dark">Mensagem enviada!</p>
-              <p className="text-sm text-floreer-muted">Respondemos em até 24 horas.</p>
+              <p className="text-sm text-floreer-muted">Respondemos em ate 24 horas.</p>
               <button
                 onClick={() => setSucesso(false)}
                 className="text-xs text-floreer-gold underline mt-2"
@@ -79,4 +79,52 @@ export default function ContatoPage() {
               <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
                 <div>
                   <label className="block text-[11px] text-floreer-muted tracking-wide mb-1.5">SEU NOME</label>
-               
+                  <input
+                    type="text"
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                    placeholder="Seu nome"
+                    required
+                    className="w-full bg-floreer-bg border border-floreer-border rounded-md px-4 py-2.5 text-sm text-floreer-dark placeholder:text-[#C0B8B0] focus:outline-none focus:border-floreer-gold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-floreer-muted tracking-wide mb-1.5">E-MAIL</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="seu@email.com"
+                    required
+                    className="w-full bg-floreer-bg border border-floreer-border rounded-md px-4 py-2.5 text-sm text-floreer-dark placeholder:text-[#C0B8B0] focus:outline-none focus:border-floreer-gold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-floreer-muted tracking-wide mb-1.5">MENSAGEM</label>
+                  <textarea
+                    rows={4}
+                    value={mensagem}
+                    onChange={(e) => setMensagem(e.target.value)}
+                    placeholder="Como podemos ajudar?"
+                    required
+                    className="w-full bg-floreer-bg border border-floreer-border rounded-md px-4 py-2.5 text-sm text-floreer-dark placeholder:text-[#C0B8B0] focus:outline-none focus:border-floreer-gold resize-none"
+                  />
+                </div>
+                {erro && <p className="text-xs text-red-500">{erro}</p>}
+                <button
+                  type="submit"
+                  disabled={enviando}
+                  className="btn-primary w-full mt-1 disabled:opacity-60"
+                >
+                  {enviando ? "Enviando..." : "Enviar mensagem"}
+                </button>
+              </form>
+            </>
+          )}
+        </div>
+      </section>
+
+      <Footer />
+    </>
+  );
+}

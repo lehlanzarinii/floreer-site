@@ -25,18 +25,10 @@ export default function AlunoPage() {
       setUserId(session.user.id);
 
       const [comprasRes, conclusoesRes] = await Promise.all([
-        supabase
-          .from("compras")
-          .select("curso_slug")
-          .eq("usuario_id", session.user.id)
-          .eq("status", "aprovado"),
-        supabase
-          .from("conclusoes")
-          .select("curso_slug")
-          .eq("usuario_id", session.user.id),
+        supabase.from("compras").select("curso_slug").eq("usuario_id", session.user.id).eq("status", "aprovado"),
+        supabase.from("conclusoes").select("curso_slug").eq("usuario_id", session.user.id),
       ]);
 
-      // Expandir "flor-completa" para os 3 cursos individuais
       const slugs = comprasRes.data?.flatMap((c) =>
         c.curso_slug === "flor-completa" ? ["broto", "botao", "plena"] : [c.curso_slug]
       ) || [];
@@ -50,9 +42,7 @@ export default function AlunoPage() {
   async function marcarConcluida(cursoSlug: string) {
     if (!userId) return;
     setMarcando(cursoSlug);
-    const { error } = await supabase
-      .from("conclusoes")
-      .upsert({ usuario_id: userId, curso_slug: cursoSlug });
+    const { error } = await supabase.from("conclusoes").upsert({ usuario_id: userId, curso_slug: cursoSlug });
     if (!error) setCursosConcluidos((prev) => [...prev, cursoSlug]);
     setMarcando(null);
   }
@@ -65,7 +55,7 @@ export default function AlunoPage() {
       cursoSlug,
       nomeCurso: `Curso ${curso.nome}`,
       nivel: curso.nivel,
-      desc: `${curso.desc} · ${curso.modulos} módulos · ${curso.aulas} aulas`,
+      desc: `${curso.desc} - ${curso.modulos} modulos - ${curso.aulas} aulas`,
     });
   }
 
@@ -84,7 +74,6 @@ export default function AlunoPage() {
 
   return (
     <div className="min-h-screen bg-floreer-bg flex">
-      {/* Sidebar */}
       <aside className="w-52 border-r border-floreer-border flex flex-col py-7 hidden md:flex flex-shrink-0">
         <Link href="/" className="flex items-center gap-2 px-5 mb-10">
           <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
@@ -97,8 +86,8 @@ export default function AlunoPage() {
         <div className="px-4 mb-8">
           <p className="text-[9px] tracking-[2px] uppercase text-floreer-muted mb-2.5 px-2">Menu</p>
           {[
-            { href: "/aluno", label: "Painel", icon: "⊞" },
-            { href: "/cursos", label: "Ver cursos", icon: "📚" },
+            { href: "/aluno", label: "Painel", icon: "[]" },
+            { href: "/cursos", label: "Ver cursos", icon: "=" },
           ].map((item) => (
             <Link
               key={item.href}
@@ -120,7 +109,7 @@ export default function AlunoPage() {
               <div key={c.slug} className="mb-3">
                 <div className="flex justify-between text-[10px] mb-1">
                   <span className={`flex items-center gap-1 ${!temAcesso ? "text-[#C8C0B8]" : concluido ? "text-floreer-gold" : "text-floreer-muted"}`}>
-                    {!temAcesso ? "🔒" : concluido ? "✓" : ""} {c.nome}
+                    {!temAcesso ? "x" : concluido ? "v" : ""} {c.nome}
                   </span>
                 </div>
                 <div className={`h-[2px] rounded-full ${concluido ? "bg-floreer-gold" : "bg-floreer-border"}`} />
@@ -128,12 +117,11 @@ export default function AlunoPage() {
             );
           })}
           <button onClick={sair} className="text-[10px] text-floreer-muted hover:text-floreer-dark mt-4 block">
-            Sair →
+            Sair
           </button>
         </div>
       </aside>
 
-      {/* Main */}
       <main className="flex-1 p-6 md:p-9 overflow-auto">
         <div className="flex items-center justify-between mb-7">
           <div>
@@ -141,7 +129,7 @@ export default function AlunoPage() {
               <span className="inline-block w-3 h-px bg-floreer-gold" />
               <span className="text-[10px] tracking-[2px] uppercase text-floreer-gold">Bem-vinda</span>
             </div>
-            <h1 className="font-serif text-3xl text-floreer-dark">Olá, {nomeAluna}</h1>
+            <h1 className="font-serif text-3xl text-floreer-dark">Ola, {nomeAluna}</h1>
           </div>
           <button onClick={sair} className="text-xs text-floreer-muted hover:text-floreer-dark">
             Sair
@@ -162,11 +150,64 @@ export default function AlunoPage() {
                   className="h-[76px] p-4 flex items-end relative"
                   style={{ background: temAcesso ? c.cor : "#F3F0EB" }}
                 >
-                  {!temAcesso && (
-                    <div className="absolute top-3 left-3">
-                      <span className="text-[#B0A89E] text-sm">🔒</span>
-                    </div>
-                  )}
                   {concluido && (
                     <div className="absolute top-3 right-3">
-                      <span classN
+                      <span className="text-[10px] bg-floreer-gold text-white px-2 py-0.5 rounded-full">Concluida</span>
+                    </div>
+                  )}
+                  <p className="font-serif text-[17px] italic" style={{ color: temAcesso ? "#3B2010" : "#B0A89E" }}>
+                    {c.nome}
+                  </p>
+                </div>
+
+                <div className="p-4 bg-floreer-bg flex flex-col gap-2">
+                  {temAcesso ? (
+                    <>
+                      <Link
+                        href={`/aluno/curso/${c.slug}`}
+                        className="text-[10px] bg-floreer-dark text-floreer-bg px-3 py-1.5 rounded text-center hover:opacity-90 transition-opacity"
+                      >
+                        Acessar curso
+                      </Link>
+                      {concluido ? (
+                        <button
+                          onClick={() => baixarCertificado(c.slug)}
+                          className="text-[10px] bg-floreer-gold text-white px-3 py-1.5 rounded text-center hover:opacity-90 transition-opacity"
+                        >
+                          Baixar Certificado
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => marcarConcluida(c.slug)}
+                          disabled={marcando === c.slug}
+                          className="text-[10px] border border-floreer-border text-floreer-muted px-3 py-1.5 rounded text-center hover:border-floreer-gold hover:text-floreer-gold transition-colors disabled:opacity-50"
+                        >
+                          {marcando === c.slug ? "Salvando..." : "Marcar como concluida"}
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-floreer-muted">{c.nivel}</span>
+                      <Link href={`/cursos/${c.slug}`} className="text-[10px] bg-floreer-dark text-floreer-bg px-3 py-1.5 rounded">
+                        Adquirir
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {cursosComprados.length === 0 && (
+          <div className="card p-8 text-center">
+            <p className="font-serif text-xl text-floreer-dark mb-2">Voce ainda nao tem cursos</p>
+            <p className="text-sm text-floreer-muted mb-5">Explore nossos cursos e comece sua jornada na beleza.</p>
+            <Link href="/cursos" className="btn-primary inline-block">Ver cursos</Link>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
