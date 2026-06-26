@@ -1,13 +1,17 @@
 "use client";
 import { useState } from "react";
-import { getCurso } from "../../../lib/cursos";
+import { getCurso, florCompleta } from "../../../lib/cursos";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function CheckoutPage() {
   const params = useParams();
   const router = useRouter();
-  const curso = getCurso(params.slug as string);
+  const slug = params.slug as string;
+
+  // Suporta tanto cursos individuais quanto flor-completa
+  const cursoIndividual = getCurso(slug);
+  const cursoData = cursoIndividual ?? (slug === "flor-completa" ? florCompleta : null);
 
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
@@ -16,7 +20,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState("");
 
-  if (!curso) return null;
+  if (!cursoData) return null;
 
   async function handleContinuar(e: React.FormEvent) {
     e.preventDefault();
@@ -31,11 +35,10 @@ export default function CheckoutPage() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cursoSlug: curso!.slug, email, nome, senha }),
+        body: JSON.stringify({ cursoSlug: cursoData!.slug, email, nome, senha }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro || "Erro ao processar");
-      // Redireciona para o Mercado Pago
       window.location.href = data.initPoint;
     } catch (err: unknown) {
       setErro(err instanceof Error ? err.message : "Erro ao processar pagamento");
@@ -43,6 +46,8 @@ export default function CheckoutPage() {
       setLoading(false);
     }
   }
+
+  const isCompleta = slug === "flor-completa";
 
   return (
     <div className="min-h-screen bg-floreer-bg grid md:grid-cols-2">
@@ -57,23 +62,37 @@ export default function CheckoutPage() {
             <div className="flex items-center gap-4 mb-5">
               <div
                 className="w-10 h-10 rounded-lg flex items-end p-2 flex-shrink-0"
-                style={{ background: curso.cor }}
+                style={{ background: cursoData.cor }}
               >
-                <span className="font-serif text-[11px] italic text-[#3B2010]">{curso.nome}</span>
+                <span className="font-serif text-[11px] italic" style={{ color: isCompleta ? "#B8864A" : "#3B2010" }}>
+                  {cursoData.nome}
+                </span>
               </div>
               <div>
-                <p className="text-sm font-medium text-floreer-dark">{`Curso ${curso.nome}`}</p>
-                <p className="text-[11px] text-floreer-muted">{curso.nivel} · Acesso vitalício</p>
+                <p className="text-sm font-medium text-floreer-dark">{cursoData.nome}</p>
+                <p className="text-[11px] text-floreer-muted">{cursoData.nivel} · Acesso vitalício</p>
               </div>
             </div>
             <div className="border-t border-floreer-border pt-4">
+              {isCompleta && (
+                <div className="flex justify-between text-xs text-floreer-muted mb-2">
+                  <span>De</span>
+                  <span className="line-through">{florCompleta.precoOriginal}</span>
+                </div>
+              )}
               <div className="flex justify-between text-xs text-floreer-muted mb-2">
                 <span>Subtotal</span>
-                <span>{curso.precoFormatado}</span>
+                <span>{cursoData.precoFormatado}</span>
               </div>
+              {isCompleta && (
+                <div className="flex justify-between text-xs text-green-600 mb-2">
+                  <span>Economia ({florCompleta.desconto} off)</span>
+                  <span>- {florCompleta.economia}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm font-medium text-floreer-dark">
                 <span>Total</span>
-                <span>{curso.precoFormatado}</span>
+                <span>{cursoData.precoFormatado}</span>
               </div>
             </div>
           </div>
@@ -147,7 +166,7 @@ export default function CheckoutPage() {
                 </button>
                 <p className="text-center text-xs text-floreer-muted">
                   Já tem conta?{" "}
-                  <Link href="/login" className="text-floreer-gold">Entrar</Link>
+                  <Link href="/aluno/login" className="text-floreer-gold">Entrar</Link>
                 </p>
               </form>
             </>
@@ -175,7 +194,7 @@ export default function CheckoutPage() {
                   disabled={loading}
                   className="btn-gold w-full text-center disabled:opacity-60"
                 >
-                  {loading ? "Redirecionando..." : `Finalizar compra — ${curso.precoFormatado}`}
+                  {loading ? "Redirecionando..." : `Finalizar compra — ${cursoData.precoFormatado}`}
                 </button>
               </form>
 
