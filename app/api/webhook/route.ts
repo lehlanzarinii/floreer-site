@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { waitUntil } from "@vercel/functions";
 
 export const dynamic = "force-dynamic";
 
@@ -11,77 +12,91 @@ function getAdminSupabase() {
   );
 }
 
-function getResend() {
-  return new Resend(process.env.RESEND_API_KEY);
+export async function POST(req: NextRequest) {
+  let body: any;
+
+  try {
+    body = await req.json();
+  } catch {
+    // MP às vezes envia como query params em vez de JSON
+    const url = new URL(req.url);
+    const topic = url.searchParams.get("topic");
+    const id = url.searchParams.get("id") || url.searchParams.get("data.id");
+    body = { type: topic === "payment" ? "payment" : topic, data: { id } };
+  }
+
+  // Responde 200 imediatamente para o MP não retentar
+  waitUntil(processarPagamento(body));
+  return NextResponse.json({ ok: true });
 }
 
-export async function POST(req: NextRequest) {
+async function processarPagamento(body: any) {
   try {
-    const body = await req.json();
+    const paymentId = body?.data?.id;
+    const tipo = body?.type || body?.action?.split(".")?.[0];
 
-    if (body.type === "payment" && body.data?.id) {
-      const pagamentoRes = await fetch(
-        `https://api.mercadopago.com/v1/payments/${body.data.id}`,
-        { headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` } }
-      );
-      const pagamento = await pagamentoRes.json();
+    if (tipo !== "payment" || !paymentId) return;
 
-      if (pagamento.status === "approved") {
-        const { curso_slug, email_aluna } = pagamento.metadata || {};
+    const pagamentoRes = await fetch(
+      `https://api.mercadopago.com/v1/payments/${paymentId}`,
+      { headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` } }
+    );
+    const pagamento = await pagamentoRes.json();
 
-        if (!email_aluna || !curso_slug) {
-          console.warn("Webhook: metadata ausente no pagamento", body.data.id);
-          return NextResponse.json({ ok: true });
-        }
+    if (pagamento.status !== "approved") return;
 
-        const supabase = getAdminSupabase();
-        const resend = getResend();
-
-        const listResult = await supabase.auth.admin.listUsers();
-        const users = listResult.data?.users ?? [];
-        const usuario = users.find((u) => u.email === email_aluna);
-
-        if (usuario) {
-          const { data: compraExistente } = await supabase
-            .from("compras")
-            .select("id")
-            .eq("pagamento_id", String(body.data.id))
-            .single();
-
-          if (!compraExistente) {
-            await supabase.from("compras").insert({
-              usuario_id: usuario.id,
-              curso_slug,
-              status: "aprovado",
-              pagamento_id: String(body.data.id),
-            });
-
-            await resend.emails.send({
-              from: "Floreer <ola@floreer.com.br>",
-              to: email_aluna,
-              subject: `Seu acesso ao Curso ${nomeCurso(curso_slug)} esta pronto - Floreer`,
-              html: emailBoasVindas(email_aluna, curso_slug),
-            });
-          }
-        } else {
-          console.warn("Webhook: usuaria nao encontrada para email", email_aluna);
-        }
-      }
+    const { curso_slug, email_aluna } = pagamento.metadata || {};
+    if (!email_aluna || !curso_slug) {
+      console.warn("Webhook: metadata ausente no pagamento", paymentId);
+      return;
     }
 
-    return NextResponse.json({ ok: true });
+    const supabase = getAdminSupabase();
+
+    // Verifica duplicata
+    const { data: compraExistente } = await supabase
+      .from("compras")
+      .select("id")
+      .eq("pagamento_id", String(paymentId))
+      .single();
+
+    if (compraExistente) return;
+
+    // Busca usuária
+    const { data: listData } = await supabase.auth.admin.listUsers();
+    const usuario = (listData?.users ?? []).find((u) => u.email === email_aluna);
+
+    if (!usuario) {
+      console.warn("Webhook: usuaria nao encontrada para email", email_aluna);
+      return;
+    }
+
+    // Insere compra
+    await supabase.from("compras").insert({
+      usuario_id: usuario.id,
+      curso_slug,
+      status: "aprovado",
+      pagamento_id: String(paymentId),
+    });
+
+    // Envia email
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    await resend.emails.send({
+      from: "Floreer <ola@floreer.com.br>",
+      to: email_aluna,
+      subject: `Seu acesso ao Curso ${nomeCurso(curso_slug)} esta pronto - Floreer`,
+      html: emailBoasVindas(email_aluna, curso_slug),
+    });
+
+    console.log("Webhook: compra processada para", email_aluna, curso_slug);
   } catch (error) {
-    console.error("Webhook erro:", error);
-    return NextResponse.json({ erro: "Erro interno" }, { status: 500 });
+    console.error("Webhook processarPagamento erro:", error);
   }
 }
 
 function nomeCurso(slug: string): string {
   const nomes: Record<string, string> = {
-    broto: "Broto",
-    botao: "Botao",
-    plena: "Plena",
-    "flor-completa": "Flor Completa",
+    broto: "Broto", botao: "Botao", plena: "Plena", "flor-completa": "Flor Completa",
   };
   return nomes[slug] || slug.charAt(0).toUpperCase() + slug.slice(1);
 }
