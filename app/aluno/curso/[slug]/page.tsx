@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../../../lib/supabase";
@@ -11,16 +11,20 @@ export default function CursoConteudoPage() {
   const slug = params.slug as string;
   const curso = getCurso(slug);
 
-  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [pdfData, setPdfData] = useState<ArrayBuffer | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
   const [concluido, setConcluido] = useState(false);
   const [marcando, setMarcando] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [numPages, setNumPages] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [scale, setScale] = useState(1.4);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const pdfDocRef = useRef<any>(null);
+  const renderTaskRef = useRef<any>(null);
 
   useEffect(() => {
-    let blobUrl: string | null = null;
-
     async function verificarECarregarPdf() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push("/aluno/login"); return; }
@@ -60,19 +64,78 @@ export default function CursoConteudoPage() {
 
       try {
         const pdfRes = await fetch(signedUrl);
-        const blob = await pdfRes.blob();
-        blobUrl = URL.createObjectURL(blob);
-        setPdfBlobUrl(blobUrl);
+        const buffer = await pdfRes.arrayBuffer();
+        setPdfData(buffer);
       } catch {
-        setPdfBlobUrl(signedUrl);
+        setErro("Erro ao carregar o arquivo. Tente novamente.");
       }
 
       setCarregando(false);
     }
 
     verificarECarregarPdf();
-    return () => { if (blobUrl) URL.revokeObjectURL(blobUrl); };
   }, [slug, router]);
+
+  // Carrega PDF.js e renderiza
+  useEffect(() => {
+    if (!pdfData) return;
+
+    async function carregarPdf() {
+      // Carrega PDF.js do CDN
+      if (!(window as any).pdfjsLib) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+          script.onload = () => resolve();
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+        (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      }
+
+      const pdfjsLib = (window as any).pdfjsLib;
+      const loadingTask = pdfjsLib.getDocument({ data: pdfData });
+      const pdfDoc = await loadingTask.promise;
+      pdfDocRef.current = pdfDoc;
+      setNumPages(pdfDoc.numPages);
+      renderPage(pdfDoc, 1);
+    }
+
+    carregarPdf();
+  }, [pdfData]);
+
+  const renderPage = useCallback(async (pdfDoc: any, pageNum: number) => {
+    if (!canvasRef.current || !pdfDoc) return;
+
+    // Cancela render anterior
+    if (renderTaskRef.current) {
+      renderTaskRef.current.cancel();
+    }
+
+    const page = await pdfDoc.getPage(pageNum);
+    const viewport = page.getViewport({ scale });
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+
+    const renderTask = page.render({ canvasContext: ctx, viewport });
+    renderTaskRef.current = renderTask;
+    try {
+      await renderTask.promise;
+    } catch {
+      // Render cancelado — normal ao trocar de página
+    }
+  }, [scale]);
+
+  useEffect(() => {
+    if (pdfDocRef.current) {
+      renderPage(pdfDocRef.current, currentPage);
+    }
+  }, [currentPage, scale, renderPage]);
 
   async function marcarConcluido() {
     if (!userId || concluido) return;
@@ -102,10 +165,11 @@ export default function CursoConteudoPage() {
     );
   }
 
-  if (!curso || !pdfBlobUrl) return null;
+  if (!curso) return null;
 
   return (
-    <div className="min-h-screen bg-floreer-bg flex flex-col">
+    <div className="min-h-screen bg-floreer-bg flex flex-col" onContextMenu={(e) => e.preventDefault()}>
+      {/* Header */}
       <header className="border-b border-floreer-border bg-floreer-bg px-5 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-4">
           <Link href="/aluno"
@@ -136,12 +200,38 @@ export default function CursoConteudoPage() {
         )}
       </header>
 
-      <div className="flex-1 flex flex-col">
-        <iframe
-          src={pdfBlobUrl}
-          className="w-full flex-1"
-          style={{ minHeight: "calc(100vh - 57px)", border: "none" }}
-          title={`Curso ${curso.nome} - Floreer`}
+      {/* Controles de página */}
+      {numPages > 0 && (
+        <div className="bg-[#1a1a1a] text-white flex items-center justify-center gap-4 py-2 text-xs flex-shrink-0">
+          <button
+            onClick={() => setScale((s) => Math.max(0.7, s - 0.2))}
+            className="px-2 py-1 rounded hover:bg-white/10"
+          >−</button>
+          <span>{Math.round(scale * 100)}%</span>
+          <button
+            onClick={() => setScale((s) => Math.min(3, s + 0.2))}
+            className="px-2 py-1 rounded hover:bg-white/10"
+          >+</button>
+          <span className="mx-2 text-white/30">|</span>
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="px-2 py-1 rounded hover:bg-white/10 disabled:opacity-30"
+          >‹</button>
+          <span>{currentPage} / {numPages}</span>
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(numPages, p + 1))}
+            disabled={currentPage === numPages}
+            className="px-2 py-1 rounded hover:bg-white/10 disabled:opacity-30"
+          >›</button>
+        </div>
+      )}
+
+      {/* Canvas — sem toolbar do browser */}
+      <div className="flex-1 overflow-auto bg-[#525659] flex justify-center py-6 px-4">
+        <canvas
+          ref={canvasRef}
+          style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.4)", userSelect: "none" }}
         />
       </div>
     </div>
