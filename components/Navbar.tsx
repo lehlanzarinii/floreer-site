@@ -60,6 +60,7 @@ export default function Navbar() {
         <div className="absolute top-16 left-0 right-0 bg-floreer-bg border-b border-floreer-border p-6 flex flex-col gap-4 md:hidden">
           <Link href="/cursos" className="text-sm text-floreer-muted" onClick={() => setOpen(false)}>Cursos</Link>
           <Link href="/sobre" className="text-sm text-floreer-muted" onClick={() => setOpen(false)}>Sobre</Link>
+          <Link href="/blog" className="text-sm text-floreer-muted" onClick={() => setOpen(false)}>Blog</Link>
           <Link href="/aluno" className="btn-primary text-center mt-2" onClick={() => setOpen(false)}>Área do aluno</Link>
         </div>
       )}
