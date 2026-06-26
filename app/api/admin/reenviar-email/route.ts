@@ -63,6 +63,10 @@ export async function POST(req: NextRequest) {
       </div>
       <p style="font-size:13px;color:#1A1815;font-weight:bold;margin-bottom:12px;">Entre na nossa comunidade no WhatsApp:</p>
       ${gruposHtml}
+      <div style="background:#FFF8F0;border:0.5px solid #E3DDD6;border-radius:8px;padding:14px 18px;margin-top:16px;font-size:11px;color:#7A756E;line-height:1.7;">
+        📬 <strong style="color:#1A1815;">Este email foi para Promocoes ou Spam?</strong><br/>
+        Mova para sua Caixa de Entrada e clique em &quot;Nao e spam&quot; para garantir que voce receba todas as novidades da Floreer.
+      </div>
       <p style="font-size:11px;color:#C0B8B0;border-top:0.5px solid #E3DDD6;padding-top:16px;margin-top:8px;">
         Floreer - floreer.com.br
       </p>
