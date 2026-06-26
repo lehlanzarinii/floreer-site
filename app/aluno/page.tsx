@@ -9,10 +9,8 @@ import { gerarCertificado } from "../../lib/certificado";
 export default function AlunoPage() {
   const router = useRouter();
   const [nomeAluna, setNomeAluna] = useState("");
-  const [userId, setUserId] = useState<string | null>(null);
   const [cursosComprados, setCursosComprados] = useState<string[]>([]);
   const [cursosConcluidos, setCursosConcluidos] = useState<string[]>([]);
-  const [marcando, setMarcando] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
@@ -22,7 +20,6 @@ export default function AlunoPage() {
 
       const nome = session.user.user_metadata?.nome || session.user.email?.split("@")[0] || "Aluna";
       setNomeAluna(nome);
-      setUserId(session.user.id);
 
       const [comprasRes, conclusoesRes] = await Promise.all([
         supabase.from("compras").select("curso_slug").eq("usuario_id", session.user.id).eq("status", "aprovado"),
@@ -38,14 +35,6 @@ export default function AlunoPage() {
     }
     verificarSessao();
   }, [router]);
-
-  async function marcarConcluida(cursoSlug: string) {
-    if (!userId) return;
-    setMarcando(cursoSlug);
-    const { error } = await supabase.from("conclusoes").upsert({ usuario_id: userId, curso_slug: cursoSlug });
-    if (!error) setCursosConcluidos((prev) => [...prev, cursoSlug]);
-    setMarcando(null);
-  }
 
   function baixarCertificado(cursoSlug: string) {
     const curso = cursos.find((c) => c.slug === cursoSlug);
@@ -89,9 +78,7 @@ export default function AlunoPage() {
             { href: "/aluno", label: "Painel", icon: "[]" },
             { href: "/cursos", label: "Ver cursos", icon: "=" },
           ].map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
+            <Link key={item.href} href={item.href}
               className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-floreer-muted hover:bg-floreer-card hover:text-floreer-dark transition-colors mb-0.5"
             >
               <span className="text-sm">{item.icon}</span>
@@ -107,9 +94,9 @@ export default function AlunoPage() {
             const concluido = cursosConcluidos.includes(c.slug);
             return (
               <div key={c.slug} className="mb-3">
-                <div className="flex justify-between text-[10px] mb-1">
+                <div className="text-[10px] mb-1">
                   <span className={`flex items-center gap-1 ${!temAcesso ? "text-[#C8C0B8]" : concluido ? "text-floreer-gold" : "text-floreer-muted"}`}>
-                    {!temAcesso ? "x" : concluido ? "v" : ""} {c.nome}
+                    {concluido ? "v" : !temAcesso ? "x" : "-"} {c.nome}
                   </span>
                 </div>
                 <div className={`h-[2px] rounded-full ${concluido ? "bg-floreer-gold" : "bg-floreer-border"}`} />
@@ -131,9 +118,7 @@ export default function AlunoPage() {
             </div>
             <h1 className="font-serif text-3xl text-floreer-dark">Ola, {nomeAluna}</h1>
           </div>
-          <button onClick={sair} className="text-xs text-floreer-muted hover:text-floreer-dark">
-            Sair
-          </button>
+          <button onClick={sair} className="text-xs text-floreer-muted hover:text-floreer-dark">Sair</button>
         </div>
 
         <p className="text-[10px] tracking-[2px] uppercase text-floreer-muted mb-4 flex items-center gap-2">
@@ -146,10 +131,7 @@ export default function AlunoPage() {
             const concluido = cursosConcluidos.includes(c.slug);
             return (
               <div key={c.slug} className={`card overflow-hidden ${!temAcesso ? "opacity-60" : ""}`}>
-                <div
-                  className="h-[76px] p-4 flex items-end relative"
-                  style={{ background: temAcesso ? c.cor : "#F3F0EB" }}
-                >
+                <div className="h-[76px] p-4 flex items-end relative" style={{ background: temAcesso ? c.cor : "#F3F0EB" }}>
                   {concluido && (
                     <div className="absolute top-3 right-3">
                       <span className="text-[10px] bg-floreer-gold text-white px-2 py-0.5 rounded-full">Concluida</span>
@@ -163,35 +145,23 @@ export default function AlunoPage() {
                 <div className="p-4 bg-floreer-bg flex flex-col gap-2.5">
                   {temAcesso ? (
                     <>
-                      <Link
-                        href={`/aluno/curso/${c.slug}`}
-                        className="btn-primary block text-center"
-                      >
-                        Acessar curso
+                      <Link href={`/aluno/curso/${c.slug}`} className="btn-primary block text-center">
+                        {concluido ? "Rever curso" : "Acessar curso"}
                       </Link>
                       {concluido ? (
-                        <button
-                          onClick={() => baixarCertificado(c.slug)}
-                          className="btn-gold w-full"
-                        >
+                        <button onClick={() => baixarCertificado(c.slug)} className="btn-gold w-full">
                           Baixar Certificado
                         </button>
                       ) : (
-                        <button
-                          onClick={() => marcarConcluida(c.slug)}
-                          disabled={marcando === c.slug}
-                          className="btn-outline w-full disabled:opacity-50"
-                        >
-                          {marcando === c.slug ? "Salvando..." : "Marcar como concluida"}
-                        </button>
+                        <p className="text-[10px] text-center text-floreer-muted py-1">
+                          Conclua o curso para liberar o certificado
+                        </p>
                       )}
                     </>
                   ) : (
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-floreer-muted">{c.nivel}</span>
-                      <Link href={`/cursos/${c.slug}`} className="btn-primary">
-                        Adquirir
-                      </Link>
+                      <Link href={`/cursos/${c.slug}`} className="btn-primary">Adquirir</Link>
                     </div>
                   )}
                 </div>

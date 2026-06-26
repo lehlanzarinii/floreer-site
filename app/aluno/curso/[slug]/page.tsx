@@ -11,14 +11,21 @@ export default function CursoConteudoPage() {
   const slug = params.slug as string;
   const curso = getCurso(slug);
 
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [pdfSignedUrl, setPdfSignedUrl] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
+  const [concluido, setConcluido] = useState(false);
+  const [marcando, setMarcando] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    let blobUrl: string | null = null;
+
     async function verificarECarregarPdf() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push("/aluno/login"); return; }
+      setUserId(session.user.id);
 
       const { data: compras } = await supabase
         .from("compras")
@@ -35,6 +42,16 @@ export default function CursoConteudoPage() {
         return;
       }
 
+      // Verifica se ja foi concluido
+      const { data: conclusao } = await supabase
+        .from("conclusoes")
+        .select("id")
+        .eq("usuario_id", session.user.id)
+        .eq("curso_slug", slug)
+        .single();
+      if (conclusao) setConcluido(true);
+
+      // Busca URL assinada
       const res = await fetch(`/api/ebook/${slug}`, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
@@ -46,15 +63,39 @@ export default function CursoConteudoPage() {
       }
 
       const { signedUrl } = await res.json();
-      setPdfUrl(signedUrl);
+      setPdfSignedUrl(signedUrl);
+
+      // Baixa como blob para exibir inline (evita download forcado)
+      try {
+        const pdfRes = await fetch(signedUrl);
+        const blob = await pdfRes.blob();
+        blobUrl = URL.createObjectURL(blob);
+        setPdfBlobUrl(blobUrl);
+      } catch {
+        setPdfBlobUrl(signedUrl);
+      }
+
       setCarregando(false);
     }
+
     verificarECarregarPdf();
+    return () => { if (blobUrl) URL.revokeObjectURL(blobUrl); };
   }, [slug, router]);
+
+  async function marcarConcluido() {
+    if (!userId || concluido) return;
+    setMarcando(true);
+    const { error } = await supabase
+      .from("conclusoes")
+      .upsert({ usuario_id: userId, curso_slug: slug });
+    if (!error) setConcluido(true);
+    setMarcando(false);
+  }
 
   if (carregando) {
     return (
-      <div className="min-h-screen bg-floreer-bg flex items-center justify-center">
+      <div className="min-h-screen bg-floreer-bg flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 border-2 border-floreer-gold border-t-transparent rounded-full animate-spin" />
         <p className="text-sm text-floreer-muted">Carregando material...</p>
       </div>
     );
@@ -69,7 +110,7 @@ export default function CursoConteudoPage() {
     );
   }
 
-  if (!curso || !pdfUrl) return null;
+  if (!curso || !pdfBlobUrl) return null;
 
   return (
     <div className="min-h-screen bg-floreer-bg flex flex-col">
@@ -89,22 +130,38 @@ export default function CursoConteudoPage() {
           </div>
         </div>
 
-        <a
-          href={pdfUrl}
-          download={`Floreer-${curso.nome}.pdf`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 text-[11px] bg-floreer-dark text-floreer-bg px-4 py-2 rounded hover:opacity-90 transition-opacity"
-        >
-          <span>&darr;</span>
-          <span className="hidden sm:inline">Baixar PDF</span>
-          <span className="sm:hidden">PDF</span>
-        </a>
+        <div className="flex items-center gap-3">
+          {concluido ? (
+            <span className="text-[11px] text-floreer-gold flex items-center gap-1">
+              <span>&#10003;</span> Concluido
+            </span>
+          ) : (
+            <button
+              onClick={marcarConcluido}
+              disabled={marcando}
+              className="text-[11px] border border-floreer-gold text-floreer-gold px-4 py-1.5 rounded hover:bg-floreer-gold hover:text-white transition-colors disabled:opacity-50"
+            >
+              {marcando ? "Salvando..." : "Concluir curso"}
+            </button>
+          )}
+          {pdfSignedUrl && (
+            <a
+              href={pdfSignedUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-[11px] bg-floreer-dark text-floreer-bg px-4 py-2 rounded hover:opacity-90 transition-opacity"
+            >
+              <span>&darr;</span>
+              <span className="hidden sm:inline">Baixar PDF</span>
+              <span className="sm:hidden">PDF</span>
+            </a>
+          )}
+        </div>
       </header>
 
       <div className="flex-1 flex flex-col">
         <iframe
-          src={pdfUrl}
+          src={pdfBlobUrl}
           className="w-full flex-1"
           style={{ minHeight: "calc(100vh - 57px)", border: "none" }}
           title={`Curso ${curso.nome} - Floreer`}
