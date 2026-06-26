@@ -40,4 +40,11 @@
     @apply bg-floreer-bg border border-floreer-border rounded-xl;
   }
 
- 
+  /* Blog prose */
+  .prose-floreer p { @apply text-sm text-floreer-muted leading-[1.9]; }
+  .prose-floreer h2 { @apply font-serif text-xl text-floreer-dark mt-8 mb-3; }
+  .prose-floreer ul { @apply flex flex-col gap-1.5 pl-5 list-disc; }
+  .prose-floreer li { @apply text-sm text-floreer-muted leading-relaxed; }
+  .prose-floreer strong { @apply text-floreer-dark font-medium; }
+  .prose-floreer em { @apply italic; }
+}

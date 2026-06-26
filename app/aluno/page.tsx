@@ -4,38 +4,70 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import { cursos } from "../../lib/cursos";
+import { gerarCertificado } from "../../lib/certificado";
 
 export default function AlunoPage() {
   const router = useRouter();
   const [nomeAluna, setNomeAluna] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
   const [cursosComprados, setCursosComprados] = useState<string[]>([]);
+  const [cursosConcluidos, setCursosConcluidos] = useState<string[]>([]);
+  const [marcando, setMarcando] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
     async function verificarSessao() {
       const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session) {
-        router.push("/aluno/login");
-        return;
-      }
+      if (!session) { router.push("/aluno/login"); return; }
 
       const nome = session.user.user_metadata?.nome || session.user.email?.split("@")[0] || "Aluna";
       setNomeAluna(nome);
+      setUserId(session.user.id);
 
-      // Buscar compras aprovadas
-      const { data: compras } = await supabase
-        .from("compras")
-        .select("curso_slug")
-        .eq("usuario_id", session.user.id)
-        .eq("status", "aprovado");
+      const [comprasRes, conclusoesRes] = await Promise.all([
+        supabase
+          .from("compras")
+          .select("curso_slug")
+          .eq("usuario_id", session.user.id)
+          .eq("status", "aprovado"),
+        supabase
+          .from("conclusoes")
+          .select("curso_slug")
+          .eq("usuario_id", session.user.id),
+      ]);
 
-      setCursosComprados(compras?.map((c) => c.curso_slug) || []);
+      // Expandir "flor-completa" para os 3 cursos individuais
+      const slugs = comprasRes.data?.flatMap((c) =>
+        c.curso_slug === "flor-completa" ? ["broto", "botao", "plena"] : [c.curso_slug]
+      ) || [];
+      setCursosComprados(slugs);
+      setCursosConcluidos(conclusoesRes.data?.map((c) => c.curso_slug) || []);
       setCarregando(false);
     }
-
     verificarSessao();
   }, [router]);
+
+  async function marcarConcluida(cursoSlug: string) {
+    if (!userId) return;
+    setMarcando(cursoSlug);
+    const { error } = await supabase
+      .from("conclusoes")
+      .upsert({ usuario_id: userId, curso_slug: cursoSlug });
+    if (!error) setCursosConcluidos((prev) => [...prev, cursoSlug]);
+    setMarcando(null);
+  }
+
+  function baixarCertificado(cursoSlug: string) {
+    const curso = cursos.find((c) => c.slug === cursoSlug);
+    if (!curso) return;
+    gerarCertificado({
+      nomeAluna,
+      cursoSlug,
+      nomeCurso: `Curso ${curso.nome}`,
+      nivel: curso.nivel,
+      desc: `${curso.desc} · ${curso.modulos} módulos · ${curso.aulas} aulas`,
+    });
+  }
 
   async function sair() {
     await supabase.auth.signOut();
@@ -83,22 +115,19 @@ export default function AlunoPage() {
           <p className="text-[9px] tracking-[2px] uppercase text-floreer-muted mb-4">Meus cursos</p>
           {cursos.map((c) => {
             const temAcesso = cursosComprados.includes(c.slug);
+            const concluido = cursosConcluidos.includes(c.slug);
             return (
               <div key={c.slug} className="mb-3">
                 <div className="flex justify-between text-[10px] mb-1">
-                  <span className={`flex items-center gap-1 ${!temAcesso ? "text-[#C8C0B8]" : "text-floreer-muted"}`}>
-                    {!temAcesso && <span>🔒</span>}
-                    {c.nome}
+                  <span className={`flex items-center gap-1 ${!temAcesso ? "text-[#C8C0B8]" : concluido ? "text-floreer-gold" : "text-floreer-muted"}`}>
+                    {!temAcesso ? "🔒" : concluido ? "✓" : ""} {c.nome}
                   </span>
                 </div>
-                <div className="h-[2px] bg-floreer-border rounded-full" />
+                <div className={`h-[2px] rounded-full ${concluido ? "bg-floreer-gold" : "bg-floreer-border"}`} />
               </div>
             );
           })}
-          <button
-            onClick={sair}
-            className="text-[10px] text-floreer-muted hover:text-floreer-dark mt-4 block"
-          >
+          <button onClick={sair} className="text-[10px] text-floreer-muted hover:text-floreer-dark mt-4 block">
             Sair →
           </button>
         </div>
@@ -114,23 +143,21 @@ export default function AlunoPage() {
             </div>
             <h1 className="font-serif text-3xl text-floreer-dark">Olá, {nomeAluna}</h1>
           </div>
-          <button
-            onClick={sair}
-            className="text-xs text-floreer-muted hover:text-floreer-dark"
-          >
+          <button onClick={sair} className="text-xs text-floreer-muted hover:text-floreer-dark">
             Sair
           </button>
         </div>
 
-        {/* Meus cursos */}
         <p className="text-[10px] tracking-[2px] uppercase text-floreer-muted mb-4 flex items-center gap-2">
           <span className="inline-block w-3 h-px bg-floreer-muted" /> Meus cursos
         </p>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
           {cursos.map((c) => {
             const temAcesso = cursosComprados.includes(c.slug);
+            const concluido = cursosConcluidos.includes(c.slug);
             return (
-              <div key={c.slug} className={`card overflow-hidden ${!temAcesso ? "opacity-70" : ""}`}>
+              <div key={c.slug} className={`card overflow-hidden ${!temAcesso ? "opacity-60" : ""}`}>
                 <div
                   className="h-[76px] p-4 flex items-end relative"
                   style={{ background: temAcesso ? c.cor : "#F3F0EB" }}
@@ -140,6 +167,11 @@ export default function AlunoPage() {
                       <span className="text-[#B0A89E] text-sm">🔒</span>
                     </div>
                   )}
+                  {concluido && (
+                    <div className="absolute top-3 right-3">
+                      <span className="text-[10px] bg-floreer-gold text-white px-2 py-0.5 rounded-full">Concluída ✓</span>
+                    </div>
+                  )}
                   <p
                     className="font-serif text-[17px] italic"
                     style={{ color: temAcesso ? "#3B2010" : "#B0A89E" }}
@@ -147,11 +179,28 @@ export default function AlunoPage() {
                     {c.nome}
                   </p>
                 </div>
-                <div className="p-4 bg-floreer-bg">
+
+                <div className="p-4 bg-floreer-bg flex flex-col gap-2">
                   {temAcesso ? (
-                    <div className="flex items-center justify-between">
+                    <>
                       <span className="text-[10px] text-floreer-gold uppercase tracking-wide">Acesso liberado</span>
-                    </div>
+                      {concluido ? (
+                        <button
+                          onClick={() => baixarCertificado(c.slug)}
+                          className="text-[10px] bg-floreer-gold text-white px-3 py-1.5 rounded text-center hover:opacity-90 transition-opacity"
+                        >
+                          ↓ Baixar Certificado
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => marcarConcluida(c.slug)}
+                          disabled={marcando === c.slug}
+                          className="text-[10px] border border-floreer-border text-floreer-muted px-3 py-1.5 rounded text-center hover:border-floreer-gold hover:text-floreer-gold transition-colors disabled:opacity-50"
+                        >
+                          {marcando === c.slug ? "Salvando..." : "Marcar como concluída"}
+                        </button>
+                      )}
+                    </>
                   ) : (
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] text-floreer-muted">{c.nivel}</span>
@@ -160,7 +209,7 @@ export default function AlunoPage() {
                         className="text-[10px] bg-floreer-dark text-floreer-bg px-3 py-1.5 rounded"
                       >
                         Adquirir
-      </Link>
+                      </Link>
                     </div>
                   )}
                 </div>

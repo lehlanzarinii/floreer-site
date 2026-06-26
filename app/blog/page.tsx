@@ -22,4 +22,28 @@ export default function BlogPage() {
             <Link
               key={post.slug}
               href={`/blog/${post.slug}`}
-              className="card p-7 hover:border-floreer-gold transition-colors grou
+              className="card p-7 hover:border-floreer-gold transition-colors group"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <span className="label-tag text-[9px]">{post.categoria}</span>
+                <span className="text-[10px] text-floreer-muted">{post.data}</span>
+                <span className="text-[10px] text-floreer-muted">· {post.tempoLeitura}</span>
+              </div>
+              <h2 className="font-serif text-xl text-floreer-dark mb-2 group-hover:text-floreer-gold transition-colors">
+                {post.titulo}
+              </h2>
+              <p className="text-sm text-floreer-muted leading-relaxed">
+                {post.resumo}
+              </p>
+              <span className="text-[11px] text-floreer-gold mt-4 inline-block">
+                Ler artigo →
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <Footer />
+    </>
+  );
+}

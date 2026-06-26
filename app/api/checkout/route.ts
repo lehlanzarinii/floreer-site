@@ -70,4 +70,22 @@ export async function POST(req: NextRequest) {
           pending: `${siteUrl}/checkout/sucesso?curso=${cursoSlug}&pendente=1`,
         },
         auto_return: "approved",
-    
+        notification_url: `${siteUrl}/api/webhook`,
+        metadata: { curso_slug: cursoSlug, email_aluna: email, nome_aluna: nome },
+        payment_methods: { installments: 6 },
+      }),
+    });
+
+    const preference = await mpResponse.json();
+
+    if (!mpResponse.ok) {
+      console.error("Erro Mercado Pago:", preference);
+      return NextResponse.json({ erro: "Erro ao criar preferência de pagamento" }, { status: 500 });
+    }
+
+    return NextResponse.json({ initPoint: preference.init_point });
+  } catch (error) {
+    console.error("Erro checkout:", error);
+    return NextResponse.json({ erro: "Erro interno" }, { status: 500 });
+  }
+}
