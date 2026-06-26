@@ -143,13 +143,17 @@ export default function CursoConteudoPage() {
     }
 
     const page = await pdfDoc.getPage(pageNum);
-    const viewport = page.getViewport({ scale: s });
+    const dpr = window.devicePixelRatio || 1;
+    const viewport = page.getViewport({ scale: s * dpr });
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    canvas.height = viewport.height;
+    // Canvas real tem resolução alta (DPR), mas CSS o exibe no tamanho certo
     canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    canvas.style.width = `${viewport.width / dpr}px`;
+    canvas.style.height = `${viewport.height / dpr}px`;
 
     const renderTask = page.render({ canvasContext: ctx, viewport });
     renderTaskRef.current = renderTask;
