@@ -1,28 +1,26 @@
 "use client";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 
 function SucessoConteudo() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const curso = searchParams.get("curso") || "";
   const pendente = searchParams.get("pendente") === "1";
   const paymentId = searchParams.get("payment_id");
-  const [verificando, setVerificando] = useState(false);
-  const [processado, setProcessado] = useState(false);
+  const [confirmado, setConfirmado] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const tentativasRef = useRef(0);
 
   const nomes: Record<string, string> = {
     broto: "Broto", botao: "Botao", plena: "Plena", "flor-completa": "Flor Completa",
   };
   const nomeCurso = nomes[curso] || "do curso";
 
-  // Verifica pagamento automaticamente ao chegar na página
   useEffect(() => {
-    if (!paymentId || pendente) return;
+    if (!paymentId) return;
 
     async function verificar() {
-      setVerificando(true);
       try {
         const res = await fetch("/api/verificar-pagamento", {
           method: "POST",
@@ -30,16 +28,35 @@ function SucessoConteudo() {
           body: JSON.stringify({ paymentId }),
         });
         const data = await res.json();
-        if (data.processado) setProcessado(true);
+        if (data.processado || data.jaProcessado || data.status === "approved") {
+          setConfirmado(true);
+          if (intervalRef.current) clearInterval(intervalRef.current);
+        }
       } catch {
-        // Falha silenciosa — webhook pode ter processado
-      } finally {
-        setVerificando(false);
+        // silencioso
+      }
+      tentativasRef.current += 1;
+      // Para de tentar após 2 minutos (24 tentativas × 5s)
+      if (tentativasRef.current >= 24 && intervalRef.current) {
+        clearInterval(intervalRef.current);
       }
     }
 
+    // Verifica imediatamente
     verificar();
-  }, [paymentId, pendente]);
+
+    // Para PIX (pendente), fica checando a cada 5 segundos
+    if (pendente) {
+      intervalRef.current = setInterval(verificar, 5000);
+    }
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentId]);
+
+  const mostrarSucesso = !pendente || confirmado;
 
   return (
     <div className="min-h-screen bg-floreer-bg flex flex-col items-center justify-center px-6 text-center">
@@ -52,13 +69,18 @@ function SucessoConteudo() {
       </Link>
 
       <div className="max-w-sm">
-        {pendente ? (
+        {!mostrarSucesso ? (
           <>
             <p className="text-3xl mb-4">⏳</p>
-            <h1 className="font-serif text-3xl text-floreer-dark mb-3">Pagamento em analise</h1>
+            <h1 className="font-serif text-3xl text-floreer-dark mb-3">Confirmando pagamento...</h1>
             <p className="text-sm text-floreer-muted leading-relaxed mb-6">
-              Seu pagamento do Curso {nomeCurso} esta sendo processado. Assim que confirmado, voce recebera um email com o acesso.
+              Estamos verificando seu PIX. Isso pode levar alguns segundos.
             </p>
+            <div className="flex justify-center gap-1.5 mb-8">
+              <span className="w-2 h-2 bg-floreer-gold rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+              <span className="w-2 h-2 bg-floreer-gold rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+              <span className="w-2 h-2 bg-floreer-gold rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+            </div>
           </>
         ) : (
           <>
@@ -76,7 +98,7 @@ function SucessoConteudo() {
         )}
 
         <Link href="/aluno/login" className="btn-primary inline-block mb-4">
-          {verificando ? "Liberando acesso..." : "Acessar meu curso"}
+          Acessar meu curso
         </Link>
         <p className="text-xs text-floreer-muted">
           Use o email e a senha que voce criou durante a compra.
