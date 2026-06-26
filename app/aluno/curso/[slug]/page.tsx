@@ -12,7 +12,6 @@ export default function CursoConteudoPage() {
   const curso = getCurso(slug);
 
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
-  const [pdfSignedUrl, setPdfSignedUrl] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
   const [concluido, setConcluido] = useState(false);
@@ -37,12 +36,8 @@ export default function CursoConteudoPage() {
         c.curso_slug === "flor-completa" ? ["broto", "botao", "plena"] : [c.curso_slug]
       ) || [];
 
-      if (!slugs.includes(slug)) {
-        router.push("/aluno");
-        return;
-      }
+      if (!slugs.includes(slug)) { router.push("/aluno"); return; }
 
-      // Verifica se ja foi concluido
       const { data: conclusao } = await supabase
         .from("conclusoes")
         .select("id")
@@ -51,7 +46,6 @@ export default function CursoConteudoPage() {
         .single();
       if (conclusao) setConcluido(true);
 
-      // Busca URL assinada
       const res = await fetch(`/api/ebook/${slug}`, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
@@ -63,9 +57,7 @@ export default function CursoConteudoPage() {
       }
 
       const { signedUrl } = await res.json();
-      setPdfSignedUrl(signedUrl);
 
-      // Baixa como blob para exibir inline (evita download forcado)
       try {
         const pdfRes = await fetch(signedUrl);
         const blob = await pdfRes.blob();
@@ -116,8 +108,7 @@ export default function CursoConteudoPage() {
     <div className="min-h-screen bg-floreer-bg flex flex-col">
       <header className="border-b border-floreer-border bg-floreer-bg px-5 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-4">
-          <Link
-            href="/aluno"
+          <Link href="/aluno"
             className="text-[11px] tracking-[1px] uppercase text-floreer-muted hover:text-floreer-dark transition-colors flex items-center gap-1.5"
           >
             &larr; Painel
@@ -130,33 +121,19 @@ export default function CursoConteudoPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {concluido ? (
-            <span className="text-[11px] text-floreer-gold flex items-center gap-1">
-              <span>&#10003;</span> Concluido
-            </span>
-          ) : (
-            <button
-              onClick={marcarConcluido}
-              disabled={marcando}
-              className="text-[11px] border border-floreer-gold text-floreer-gold px-4 py-1.5 rounded hover:bg-floreer-gold hover:text-white transition-colors disabled:opacity-50"
-            >
-              {marcando ? "Salvando..." : "Concluir curso"}
-            </button>
-          )}
-          {pdfSignedUrl && (
-            <a
-              href={pdfSignedUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-[11px] bg-floreer-dark text-floreer-bg px-4 py-2 rounded hover:opacity-90 transition-opacity"
-            >
-              <span>&darr;</span>
-              <span className="hidden sm:inline">Baixar PDF</span>
-              <span className="sm:hidden">PDF</span>
-            </a>
-          )}
-        </div>
+        {concluido ? (
+          <span className="text-[11px] text-floreer-gold flex items-center gap-1">
+            <span>&#10003;</span> Concluido
+          </span>
+        ) : (
+          <button
+            onClick={marcarConcluido}
+            disabled={marcando}
+            className="text-[11px] border border-floreer-gold text-floreer-gold px-4 py-1.5 rounded hover:bg-floreer-gold hover:text-white transition-colors disabled:opacity-50"
+          >
+            {marcando ? "Salvando..." : "Concluir curso"}
+          </button>
+        )}
       </header>
 
       <div className="flex-1 flex flex-col">

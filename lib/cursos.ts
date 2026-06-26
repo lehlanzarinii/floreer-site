@@ -23,8 +23,8 @@ export const cursos: Curso[] = [
     desc: "Automaquiagem do zero ao dia a dia",
     descLonga:
       "Do zero ao seu dia a dia — aprenda automaquiagem com método, do cuidado com a pele ao look completo.",
-    preco: 10000,
-    precoFormatado: "R$ 100,00",
+    preco: 5000,
+    precoFormatado: "R$ 50,00",
     modulos: 12,
     aulas: 57,
     cor: "#F0C9B8",
@@ -63,8 +63,8 @@ export const cursos: Curso[] = [
     desc: "Técnicas avançadas e maquiar outras pessoas",
     descLonga:
       "Técnicas avançadas, color correction, olho dramático e a transição para maquiar outras pessoas com confiança.",
-    preco: 15000,
-    precoFormatado: "R$ 150,00",
+    preco: 10000,
+    precoFormatado: "R$ 100,00",
     modulos: 12,
     aulas: 52,
     cor: "#C98A6E",
@@ -103,8 +103,8 @@ export const cursos: Curso[] = [
     desc: "Técnica profissional, negócio e identidade",
     descLonga:
       "Técnica profissional, maquiagem de noiva, fotografia, gestão do negócio e construção da sua identidade como maquiadora.",
-    preco: 20000,
-    precoFormatado: "R$ 200,00",
+    preco: 15000,
+    precoFormatado: "R$ 150,00",
     modulos: 15,
     aulas: 62,
     cor: "#B68A4E",
@@ -145,16 +145,17 @@ export function getCurso(slug: string): Curso | undefined {
   return cursos.find((c) => c.slug === slug);
 }
 
+// Flor Completa: R$50 + R$100 + R$150 = R$300, 30% off = R$210
 export const florCompleta = {
   slug: "flor-completa",
   nome: "Flor Completa",
   nivel: "Trilha completa · Todos os níveis",
   desc: "Os três cursos da trilha de maquiagem em um só acesso — Broto, Botão e Plena.",
   descLonga: "A trilha completa de maquiagem Floreer: do zero à carreira profissional, com acesso vitalício aos três cursos.",
-  preco: 31500,
-  precoFormatado: "R$ 315,00",
-  precoOriginal: "R$ 450,00",
-  economia: "R$ 135,00",
+  preco: 21000,
+  precoFormatado: "R$ 210,00",
+  precoOriginal: "R$ 300,00",
+  economia: "R$ 90,00",
   desconto: "30%",
   cor: "#1A1815",
   cursosSlugs: ["broto", "botao", "plena"],

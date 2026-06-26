@@ -8,7 +8,7 @@ export default function BlogPage() {
     <>
       <Navbar />
 
-      <section className="px-6 md:px-10 py-14 max-w-3xl">
+      <section className="px-6 md:px-10 py-14 max-w-3xl mx-auto w-full">
         <div className="label-tag mb-5">Blog Floreer</div>
         <h1 className="font-serif text-4xl text-floreer-dark mb-2">
           Beleza com metodo
@@ -24,7 +24,7 @@ export default function BlogPage() {
               href={`/blog/${post.slug}`}
               className="card p-7 hover:border-floreer-gold transition-colors group"
             >
-              <div className="flex items-center gap-3 mb-3">
+              <div className="flex flex-wrap items-center gap-3 mb-3">
                 <span className="label-tag text-[9px]">{post.categoria}</span>
                 <span className="text-[10px] text-floreer-muted">{post.data}</span>
                 <span className="text-[10px] text-floreer-muted">· {post.tempoLeitura}</span>

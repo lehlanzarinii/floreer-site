@@ -6,40 +6,36 @@ import { supabase } from "../../../lib/supabase";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [modo, setModo] = useState<"login" | "cadastro">("login");
+  const [modo, setModo] = useState<"login" | "reset">("login");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [nome, setNome] = useState("");
   const [erro, setErro] = useState("");
   const [mensagem, setMensagem] = useState("");
   const [carregando, setCarregando] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    setErro("");
-    setMensagem("");
-    setCarregando(true);
-
-    if (modo === "login") {
-      const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
-      if (error) {
-        setErro("Email ou senha incorretos.");
-      } else {
-        router.push("/aluno");
-      }
+    setErro(""); setMensagem(""); setCarregando(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
+    if (error) {
+      setErro("Email ou senha incorretos.");
     } else {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password: senha,
-        options: { data: { nome } },
-      });
-      if (error) {
-        setErro("Erro ao criar conta. Tente novamente.");
-      } else {
-        setMensagem("Conta criada! Verifique seu email para confirmar o cadastro.");
-      }
+      router.push("/aluno");
     }
+    setCarregando(false);
+  }
 
+  async function handleReset(e: React.FormEvent) {
+    e.preventDefault();
+    setErro(""); setMensagem(""); setCarregando(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "https://floreer.com.br"}/aluno/nova-senha`,
+    });
+    if (error) {
+      setErro("Nao foi possivel enviar o email. Verifique o endereco.");
+    } else {
+      setMensagem("Email enviado! Verifique sua caixa de entrada e clique no link para redefinir sua senha.");
+    }
     setCarregando(false);
   }
 
@@ -55,79 +51,76 @@ export default function LoginPage() {
 
       <div className="w-full max-w-sm">
         <h1 className="font-serif text-3xl text-floreer-dark mb-1">
-          {modo === "login" ? "Entrar" : "Criar conta"}
+          {modo === "login" ? "Entrar" : "Redefinir senha"}
         </h1>
         <p className="text-sm text-floreer-muted mb-7">
-          {modo === "login" ? "Acesse sua área do aluno." : "Cadastre-se para acessar seus cursos."}
+          {modo === "login" ? "Acesse sua area do aluno." : "Enviaremos um link para o seu email."}
         </p>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {modo === "cadastro" && (
+        {modo === "login" ? (
+          <form onSubmit={handleLogin} className="flex flex-col gap-4">
             <div>
-              <label className="block text-[11px] text-floreer-muted tracking-wide mb-1.5">SEU NOME</label>
+              <label className="block text-[11px] text-floreer-muted tracking-wide mb-1.5">E-MAIL</label>
               <input
-                type="text"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                placeholder="Seu nome"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="seu@email.com"
                 required
                 className="w-full bg-white border border-floreer-border rounded-md px-4 py-2.5 text-sm text-floreer-dark placeholder:text-[#C0B8B0] focus:outline-none focus:border-floreer-gold"
               />
             </div>
-          )}
-
-          <div>
-            <label className="block text-[11px] text-floreer-muted tracking-wide mb-1.5">E-MAIL</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="seu@email.com"
-              required
-              className="w-full bg-white border border-floreer-border rounded-md px-4 py-2.5 text-sm text-floreer-dark placeholder:text-[#C0B8B0] focus:outline-none focus:border-floreer-gold"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[11px] text-floreer-muted tracking-wide mb-1.5">SENHA</label>
-            <input
-              type="password"
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-              placeholder="••••••••"
-              required
-              minLength={6}
-              className="w-full bg-white border border-floreer-border rounded-md px-4 py-2.5 text-sm text-floreer-dark placeholder:text-[#C0B8B0] focus:outline-none focus:border-floreer-gold"
-            />
-          </div>
-
-          {erro && <p className="text-xs text-red-500">{erro}</p>}
-          {mensagem && <p className="text-xs text-green-600">{mensagem}</p>}
-
-          <button
-            type="submit"
-            disabled={carregando}
-            className="btn-primary w-full mt-1 disabled:opacity-60"
-          >
-            {carregando ? "Aguarde..." : modo === "login" ? "Entrar" : "Criar conta"}
-          </button>
-        </form>
-
-        <p className="text-xs text-floreer-muted text-center mt-6">
-          {modo === "login" ? (
-            <>Não tem conta?{" "}
-              <button onClick={() => setModo("cadastro")} className="text-floreer-gold underline">
-                Cadastre-se
-              </button>
-            </>
-          ) : (
-            <>Já tem conta?{" "}
-              <button onClick={() => setModo("login")} className="text-floreer-gold underline">
-                Entrar
-              </button>
-            </>
-          )}
-        </p>
+            <div>
+              <label className="block text-[11px] text-floreer-muted tracking-wide mb-1.5">SENHA</label>
+              <input
+                type="password"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                placeholder="••••••••"
+                required
+                minLength={6}
+                className="w-full bg-white border border-floreer-border rounded-md px-4 py-2.5 text-sm text-floreer-dark placeholder:text-[#C0B8B0] focus:outline-none focus:border-floreer-gold"
+              />
+            </div>
+            {erro && <p className="text-xs text-red-500">{erro}</p>}
+            <button type="submit" disabled={carregando} className="btn-primary w-full mt-1 disabled:opacity-60">
+              {carregando ? "Aguarde..." : "Entrar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setModo("reset"); setErro(""); setMensagem(""); }}
+              className="text-xs text-floreer-muted text-center hover:text-floreer-gold transition-colors"
+            >
+              Esqueci minha senha
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleReset} className="flex flex-col gap-4">
+            <div>
+              <label className="block text-[11px] text-floreer-muted tracking-wide mb-1.5">E-MAIL</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="seu@email.com"
+                required
+                className="w-full bg-white border border-floreer-border rounded-md px-4 py-2.5 text-sm text-floreer-dark placeholder:text-[#C0B8B0] focus:outline-none focus:border-floreer-gold"
+              />
+            </div>
+            {erro && <p className="text-xs text-red-500">{erro}</p>}
+            {mensagem && <p className="text-xs text-green-600">{mensagem}</p>}
+            <button type="submit" disabled={carregando} className="btn-primary w-full mt-1 disabled:opacity-60">
+              {carregando ? "Enviando..." : "Enviar link"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setModo("login"); setErro(""); setMensagem(""); }}
+              className="text-xs text-floreer-muted text-center hover:text-floreer-gold transition-colors"
+            >
+              Voltar ao login
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );
