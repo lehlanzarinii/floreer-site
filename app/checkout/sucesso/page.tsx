@@ -1,20 +1,45 @@
 "use client";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 function SucessoConteudo() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const curso = searchParams.get("curso") || "";
   const pendente = searchParams.get("pendente") === "1";
+  const paymentId = searchParams.get("payment_id");
+  const [verificando, setVerificando] = useState(false);
+  const [processado, setProcessado] = useState(false);
 
   const nomes: Record<string, string> = {
-    broto: "Broto",
-    botao: "Botao",
-    plena: "Plena",
-    "flor-completa": "Flor Completa",
+    broto: "Broto", botao: "Botao", plena: "Plena", "flor-completa": "Flor Completa",
   };
   const nomeCurso = nomes[curso] || "do curso";
+
+  // Verifica pagamento automaticamente ao chegar na página
+  useEffect(() => {
+    if (!paymentId || pendente) return;
+
+    async function verificar() {
+      setVerificando(true);
+      try {
+        const res = await fetch("/api/verificar-pagamento", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paymentId }),
+        });
+        const data = await res.json();
+        if (data.processado) setProcessado(true);
+      } catch {
+        // Falha silenciosa — webhook pode ter processado
+      } finally {
+        setVerificando(false);
+      }
+    }
+
+    verificar();
+  }, [paymentId, pendente]);
 
   return (
     <div className="min-h-screen bg-floreer-bg flex flex-col items-center justify-center px-6 text-center">
@@ -51,7 +76,7 @@ function SucessoConteudo() {
         )}
 
         <Link href="/aluno/login" className="btn-primary inline-block mb-4">
-          Acessar meu curso
+          {verificando ? "Liberando acesso..." : "Acessar meu curso"}
         </Link>
         <p className="text-xs text-floreer-muted">
           Use o email e a senha que voce criou durante a compra.
