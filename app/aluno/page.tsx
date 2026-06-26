@@ -140,7 +140,7 @@ export default function AlunoPage() {
           <span className="inline-block w-3 h-px bg-floreer-muted" /> Meus cursos
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           {cursos.map((c) => {
             const temAcesso = cursosComprados.includes(c.slug);
             const concluido = cursosConcluidos.includes(c.slug);
@@ -160,19 +160,19 @@ export default function AlunoPage() {
                   </p>
                 </div>
 
-                <div className="p-4 bg-floreer-bg flex flex-col gap-2">
+                <div className="p-4 bg-floreer-bg flex flex-col gap-2.5">
                   {temAcesso ? (
                     <>
                       <Link
                         href={`/aluno/curso/${c.slug}`}
-                        className="text-[10px] bg-floreer-dark text-floreer-bg px-3 py-1.5 rounded text-center hover:opacity-90 transition-opacity"
+                        className="btn-primary block text-center"
                       >
                         Acessar curso
                       </Link>
                       {concluido ? (
                         <button
                           onClick={() => baixarCertificado(c.slug)}
-                          className="text-[10px] bg-floreer-gold text-white px-3 py-1.5 rounded text-center hover:opacity-90 transition-opacity"
+                          className="btn-gold w-full"
                         >
                           Baixar Certificado
                         </button>
@@ -180,7 +180,7 @@ export default function AlunoPage() {
                         <button
                           onClick={() => marcarConcluida(c.slug)}
                           disabled={marcando === c.slug}
-                          className="text-[10px] border border-floreer-border text-floreer-muted px-3 py-1.5 rounded text-center hover:border-floreer-gold hover:text-floreer-gold transition-colors disabled:opacity-50"
+                          className="btn-outline w-full disabled:opacity-50"
                         >
                           {marcando === c.slug ? "Salvando..." : "Marcar como concluida"}
                         </button>
@@ -188,8 +188,8 @@ export default function AlunoPage() {
                     </>
                   ) : (
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-floreer-muted">{c.nivel}</span>
-                      <Link href={`/cursos/${c.slug}`} className="text-[10px] bg-floreer-dark text-floreer-bg px-3 py-1.5 rounded">
+                      <span className="text-xs text-floreer-muted">{c.nivel}</span>
+                      <Link href={`/cursos/${c.slug}`} className="btn-primary">
                         Adquirir
                       </Link>
                     </div>

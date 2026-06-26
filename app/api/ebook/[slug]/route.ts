@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
@@ -24,33 +22,28 @@ export async function GET(
     return NextResponse.json({ erro: "Curso inválido" }, { status: 400 });
   }
 
-  // Usa @supabase/ssr para ler o cookie de sessão corretamente no App Router
-  const cookieStore = cookies();
-  const supabaseAnon = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
+  // Lê o token do header Authorization: Bearer <token>
+  const authHeader = req.headers.get("authorization") || "";
+  const accessToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
-  const { data: { session } } = await supabaseAnon.auth.getSession();
-
-  if (!session) {
+  if (!accessToken) {
     return NextResponse.json({ erro: "Não autenticada" }, { status: 401 });
   }
 
   const supabase = getAdminSupabase();
 
+  // Verifica o token com admin client
+  const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken);
+
+  if (userError || !user) {
+    return NextResponse.json({ erro: "Token inválido" }, { status: 401 });
+  }
+
   // Verifica compra aprovada
   const { data: compras } = await supabase
     .from("compras")
     .select("curso_slug")
-    .eq("usuario_id", session.user.id)
+    .eq("usuario_id", user.id)
     .eq("status", "aprovado");
 
   const slugsComprados = compras?.flatMap((c) =>
@@ -71,5 +64,6 @@ export async function GET(
     return NextResponse.json({ erro: "Erro ao acessar arquivo" }, { status: 500 });
   }
 
-  return NextResponse.redirect(signedData.signedUrl);
+  // Retorna a URL assinada como JSON — o client carrega no iframe
+  return NextResponse.json({ signedUrl: signedData.signedUrl });
 }
