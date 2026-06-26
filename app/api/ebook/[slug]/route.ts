@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
@@ -18,22 +20,19 @@ export async function GET(
 ) {
   const slug = params.slug;
 
-  // Valida slug
   if (!SLUGS_VALIDOS.includes(slug)) {
     return NextResponse.json({ erro: "Curso inválido" }, { status: 400 });
   }
 
-  // Pega o token de autorização do cookie de sessão Supabase
-  const supabaseAnon = createClient(
+  // Usa @supabase/ssr para ler o cookie de sessão corretamente no App Router
+  const cookieStore = cookies();
+  const supabaseAnon = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      auth: {
-        persistSession: false,
-      },
-      global: {
-        headers: {
-          cookie: req.headers.get("cookie") || "",
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
         },
       },
     }
@@ -47,7 +46,7 @@ export async function GET(
 
   const supabase = getAdminSupabase();
 
-  // Verifica se a aluna tem compra aprovada para este curso
+  // Verifica compra aprovada
   const { data: compras } = await supabase
     .from("compras")
     .select("curso_slug")
@@ -72,6 +71,5 @@ export async function GET(
     return NextResponse.json({ erro: "Erro ao acessar arquivo" }, { status: 500 });
   }
 
-  // Redireciona para a URL assinada
   return NextResponse.redirect(signedData.signedUrl);
 }
