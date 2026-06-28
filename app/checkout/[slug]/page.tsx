@@ -30,6 +30,16 @@ export default function CheckoutPage() {
 
   async function handleContinuar(e: React.FormEvent) {
     e.preventDefault();
+    // Pixel da Meta: usuária avançou para o pagamento
+    const fbq = (window as unknown as { fbq?: (...a: unknown[]) => void }).fbq;
+    if (typeof window !== "undefined" && fbq) {
+      fbq("track", "InitiateCheckout", {
+        value: (cursoData!.preco ?? 0) / 100,
+        currency: "BRL",
+        content_name: cursoData!.nome,
+        content_type: "product",
+      });
+    }
     setPasso("pagamento");
   }
 
