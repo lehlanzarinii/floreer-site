@@ -11,11 +11,30 @@ function SucessoConteudo() {
   const [confirmado, setConfirmado] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const tentativasRef = useRef(0);
+  const comprouRef = useRef(false);
 
   const nomes: Record<string, string> = {
     broto: "Broto", botao: "Botao", plena: "Plena", "flor-completa": "Flor Completa",
   };
+  const precos: Record<string, number> = {
+    broto: 50, botao: 100, plena: 150, "flor-completa": 210,
+  };
   const nomeCurso = nomes[curso] || "do curso";
+
+  // Dispara o evento de Compra no Pixel da Meta (uma única vez)
+  function rastrearCompra() {
+    if (comprouRef.current) return;
+    const fbq = (window as unknown as { fbq?: (...a: unknown[]) => void }).fbq;
+    if (typeof window !== "undefined" && fbq) {
+      fbq("track", "Purchase", {
+        value: precos[curso] ?? 0,
+        currency: "BRL",
+        content_name: nomeCurso,
+        content_type: "product",
+      });
+      comprouRef.current = true;
+    }
+  }
 
   useEffect(() => {
     if (!paymentId) return;
@@ -30,6 +49,7 @@ function SucessoConteudo() {
         const data = await res.json();
         if (data.processado || data.jaProcessado || data.status === "approved") {
           setConfirmado(true);
+          rastrearCompra();
           if (intervalRef.current) clearInterval(intervalRef.current);
         }
       } catch {
@@ -57,6 +77,12 @@ function SucessoConteudo() {
   }, [paymentId]);
 
   const mostrarSucesso = !pendente || confirmado;
+
+  // Garante o disparo da Compra quando a tela de sucesso aparece (ex.: cartão aprovado na hora)
+  useEffect(() => {
+    if (mostrarSucesso) rastrearCompra();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mostrarSucesso]);
 
   return (
     <div className="min-h-screen bg-floreer-bg flex flex-col items-center justify-center px-6 text-center">
