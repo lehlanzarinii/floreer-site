@@ -12,6 +12,8 @@ export default function AlunoPage() {
   const [cursosComprados, setCursosComprados] = useState<string[]>([]);
   const [cursosConcluidos, setCursosConcluidos] = useState<string[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [certCurso, setCertCurso] = useState<string | null>(null);
+  const [certNome, setCertNome] = useState("");
 
   useEffect(() => {
     async function verificarSessao() {
@@ -36,16 +38,29 @@ export default function AlunoPage() {
     verificarSessao();
   }, [router]);
 
-  function baixarCertificado(cursoSlug: string) {
-    const curso = cursos.find((c) => c.slug === cursoSlug);
+  function abrirCertificado(cursoSlug: string) {
+    setCertCurso(cursoSlug);
+    // Pré-preenche com o nome salvo, se já for um nome de verdade.
+    setCertNome(nomeAluna && nomeAluna !== "Aluna" && !nomeAluna.includes("@") ? nomeAluna : "");
+  }
+
+  function confirmarCertificado(e: React.FormEvent) {
+    e.preventDefault();
+    const nome = certNome.trim();
+    if (!certCurso || nome.length < 3) return;
+    const curso = cursos.find((c) => c.slug === certCurso);
     if (!curso) return;
     gerarCertificado({
-      nomeAluna,
-      cursoSlug,
+      nomeAluna: nome,
+      cursoSlug: certCurso,
       nomeCurso: `Curso ${curso.nome}`,
       nivel: curso.nivel,
       desc: `${curso.desc} - ${curso.modulos} modulos - ${curso.aulas} aulas`,
     });
+    // Guarda o nome para as próximas vezes.
+    supabase.auth.updateUser({ data: { nome } });
+    setNomeAluna(nome);
+    setCertCurso(null);
   }
 
   async function sair() {
@@ -149,7 +164,7 @@ export default function AlunoPage() {
                         {concluido ? "Rever curso" : "Acessar curso"}
                       </Link>
                       {concluido ? (
-                        <button onClick={() => baixarCertificado(c.slug)} className="btn-gold w-full">
+                        <button onClick={() => abrirCertificado(c.slug)} className="btn-gold w-full">
                           Baixar Certificado
                         </button>
                       ) : (
@@ -227,6 +242,43 @@ export default function AlunoPage() {
           </div>
         )}
       </main>
+
+      {certCurso && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-6 z-50" onClick={() => setCertCurso(null)}>
+          <div className="bg-floreer-bg rounded-xl p-7 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-serif text-xl text-floreer-dark mb-2">Nome no certificado</h3>
+            <p className="text-sm text-floreer-muted mb-5">
+              Digite seu nome completo exatamente como deve aparecer no certificado.
+            </p>
+            <form onSubmit={confirmarCertificado} className="flex flex-col gap-3">
+              <input
+                type="text"
+                autoFocus
+                value={certNome}
+                onChange={(e) => setCertNome(e.target.value)}
+                placeholder="Seu nome completo"
+                className="w-full bg-white border border-floreer-border rounded-md px-4 py-2.5 text-sm text-floreer-dark placeholder:text-[#C0B8B0] focus:outline-none focus:border-floreer-gold"
+              />
+              <div className="flex gap-2 mt-1">
+                <button
+                  type="button"
+                  onClick={() => setCertCurso(null)}
+                  className="flex-1 text-sm text-floreer-muted border border-floreer-border rounded-md py-2.5 hover:text-floreer-dark"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={certNome.trim().length < 3}
+                  className="btn-gold flex-1 disabled:opacity-50"
+                >
+                  Gerar certificado
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
