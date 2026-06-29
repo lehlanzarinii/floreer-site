@@ -12,6 +12,7 @@ function SucessoConteudo() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const tentativasRef = useRef(0);
   const comprouRef = useRef(false);
+  const [linkAcesso, setLinkAcesso] = useState("");
 
   const nomes: Record<string, string> = {
     broto: "Broto", botao: "Botao", plena: "Plena", "flor-completa": "Flor Completa",
@@ -84,6 +85,21 @@ function SucessoConteudo() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mostrarSucesso]);
 
+  // Rede de segurança: busca o link de criar senha pra mostrar na tela
+  // (assim o acesso nao depende so do e-mail chegar).
+  useEffect(() => {
+    if (!mostrarSucesso || !paymentId || linkAcesso) return;
+    fetch("/api/link-acesso", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paymentId }),
+    })
+      .then((r) => r.json())
+      .then((d) => { if (d?.link) setLinkAcesso(d.link); })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mostrarSucesso, paymentId, linkAcesso]);
+
   return (
     <div className="min-h-screen bg-floreer-bg flex flex-col items-center justify-center px-6 text-center">
       <Link href="/" className="flex items-center gap-2 mb-12">
@@ -123,12 +139,25 @@ function SucessoConteudo() {
           </>
         )}
 
-        <Link href="/aluno/login" className="btn-primary inline-block mb-4">
-          Ir para a area da aluna
-        </Link>
-        <p className="text-xs text-floreer-muted">
-          Crie sua senha pelo link do e-mail e depois entre com o seu e-mail.
-        </p>
+        {mostrarSucesso && linkAcesso ? (
+          <>
+            <a href={linkAcesso} className="btn-primary inline-block mb-4">
+              Criar minha senha e acessar agora
+            </a>
+            <p className="text-xs text-floreer-muted">
+              Tambem enviamos esse link no seu e-mail, como reforco.
+            </p>
+          </>
+        ) : (
+          <>
+            <Link href="/aluno/login" className="btn-primary inline-block mb-4">
+              Ir para a area da aluna
+            </Link>
+            <p className="text-xs text-floreer-muted">
+              Crie sua senha pelo link do e-mail e depois entre com o seu e-mail.
+            </p>
+          </>
+        )}
       </div>
     </div>
   );
