@@ -57,6 +57,15 @@ export default function ContatoPage() {
               <span className="text-floreer-gold">ig</span>
               @floreer_beleza no Instagram
             </div>
+            <a
+              href="https://wa.me/message/5RSH3QWGKCCTA1"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2.5 bg-[#25D366] text-white text-sm font-medium rounded-lg px-5 py-3 mt-1 w-fit hover:opacity-90 transition-opacity"
+            >
+              <span>💬</span>
+              Falar no WhatsApp
+            </a>
           </div>
         </div>
 
