@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurso, florCompleta } from "../../../lib/cursos";
-import { createClient } from "@supabase/supabase-js";
-
-function getAdminSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_KEY!
-  );
-}
 
 export async function POST(req: NextRequest) {
   try {
-    const { cursoSlug, email, nome, senha, telefone } = await req.json();
+    const { cursoSlug, email } = await req.json();
+
+    if (!email) {
+      return NextResponse.json({ erro: "Informe um e-mail" }, { status: 400 });
+    }
 
     const isBundle = cursoSlug === "flor-completa";
     const curso = isBundle ? null : getCurso(cursoSlug);
@@ -22,26 +18,14 @@ export async function POST(req: NextRequest) {
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://floreer.com.br";
 
-    if (email && senha) {
-      const supabase = getAdminSupabase();
-      const { error: createError } = await supabase.auth.admin.createUser({
-        email,
-        password: senha,
-        user_metadata: { nome, telefone },
-        email_confirm: true,
-      });
-
-      if (createError && !createError.message.toLowerCase().includes("already")) {
-        console.warn("Aviso ao criar usuaria:", createError.message);
-      }
-    }
-
     const titulo = isBundle
       ? "Floreer - Flor Completa (Trilha Completa)"
       : `Floreer - Curso ${curso!.nome}`;
     const preco = isBundle ? florCompleta.preco / 100 : curso!.preco / 100;
     const desc = isBundle ? florCompleta.desc : curso!.desc;
 
+    // A conta da aluna NÃO é criada aqui. Quem cria a conta e libera o acesso
+    // é o webhook, DEPOIS do pagamento aprovado (checkout enxuto = mais vendas).
     const mpResponse = await fetch("https://api.mercadopago.com/checkout/preferences", {
       method: "POST",
       headers: {
@@ -59,7 +43,7 @@ export async function POST(req: NextRequest) {
             unit_price: preco,
           },
         ],
-        payer: { email, name: nome },
+        payer: { email },
         back_urls: {
           success: `${siteUrl}/checkout/sucesso?curso=${cursoSlug}`,
           failure: `${siteUrl}/checkout/${cursoSlug}`,
@@ -67,7 +51,7 @@ export async function POST(req: NextRequest) {
         },
         auto_return: "approved",
         notification_url: `${siteUrl}/api/webhook`,
-        metadata: { curso_slug: cursoSlug, email_aluna: email, nome_aluna: nome, telefone_aluna: telefone },
+        metadata: { curso_slug: cursoSlug, email_aluna: email },
         payment_methods: { installments: 6 },
       }),
     });
