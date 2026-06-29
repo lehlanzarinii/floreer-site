@@ -52,8 +52,9 @@ async function processarPagamento(body: any) {
     }
 
     const supabase = getAdminSupabase();
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://floreer.com.br";
 
-    // Verifica duplicata
+    // Trava anti-duplicata: o Mercado Pago manda o aviso 2x.
     const { data: compraExistente } = await supabase
       .from("compras")
       .select("id")
@@ -62,16 +63,34 @@ async function processarPagamento(body: any) {
 
     if (compraExistente) return;
 
-    // Busca usuária
-    const { data: listData } = await supabase.auth.admin.listUsers();
-    const usuario = (listData?.users ?? []).find((u) => u.email === email_aluna);
+    // 1) Cria a conta da aluna se ainda não existir (sem senha — ela cria depois).
+    let usuario:
+      | { id: string; email?: string }
+      | undefined;
+
+    const { data: criada, error: createError } =
+      await supabase.auth.admin.createUser({
+        email: email_aluna,
+        email_confirm: true,
+      });
+
+    if (criada?.user) {
+      usuario = criada.user;
+    } else {
+      // Já existe (compradora recorrente) — busca a conta existente.
+      if (createError && !createError.message.toLowerCase().includes("already")) {
+        console.warn("Webhook: erro ao criar usuaria:", createError.message);
+      }
+      const { data: listData } = await supabase.auth.admin.listUsers();
+      usuario = (listData?.users ?? []).find((u) => u.email === email_aluna);
+    }
 
     if (!usuario) {
-      console.warn("Webhook: usuaria nao encontrada para email", email_aluna);
+      console.warn("Webhook: nao foi possivel obter a usuaria para", email_aluna);
       return;
     }
 
-    // Insere compra
+    // 2) Libera o acesso ao curso.
     await supabase.from("compras").insert({
       usuario_id: usuario.id,
       curso_slug,
@@ -79,13 +98,28 @@ async function processarPagamento(body: any) {
       pagamento_id: String(paymentId),
     });
 
-    // Envia email
+    // 3) Gera um link para a aluna criar a senha dela.
+    let linkSenha = `${siteUrl}/aluno/login`;
+    try {
+      const { data: linkData } = await supabase.auth.admin.generateLink({
+        type: "recovery",
+        email: email_aluna,
+        options: { redirectTo: `${siteUrl}/aluno/nova-senha` },
+      });
+      if (linkData?.properties?.action_link) {
+        linkSenha = linkData.properties.action_link;
+      }
+    } catch (e) {
+      console.warn("Webhook: erro ao gerar link de senha:", e);
+    }
+
+    // 4) Envia o e-mail de boas-vindas com o link de criar senha.
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
       from: "Floreer <ola@floreer.com.br>",
       to: email_aluna,
-      subject: `Seu acesso ao Curso ${nomeCurso(curso_slug)} esta pronto - Floreer`,
-      html: emailBoasVindas(email_aluna, curso_slug),
+      subject: `Compra confirmada — crie sua senha e acesse o Curso ${nomeCurso(curso_slug)}`,
+      html: emailBoasVindas(email_aluna, curso_slug, linkSenha),
     });
 
     console.log("Webhook: compra processada para", email_aluna, curso_slug);
@@ -115,7 +149,7 @@ const NOMES_GRUPOS: Record<string, string[]> = {
   "flor-completa": ["Floreer Comunidade", "Floreer Broto", "Floreer Botao", "Floreer Plena"],
 };
 
-function emailBoasVindas(email: string, cursoSlug: string): string {
+function emailBoasVindas(email: string, cursoSlug: string, linkSenha: string): string {
   const nome = nomeCurso(cursoSlug);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://floreer.com.br";
   const links = LINKS_WHATSAPP[cursoSlug] || ["https://chat.whatsapp.com/KUOJt71q22rLFiFbvWKBU0"];
@@ -130,16 +164,21 @@ function emailBoasVindas(email: string, cursoSlug: string): string {
   return `
     <div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;padding:40px 20px;color:#1A1815;background:#FAFAF8;">
       <p style="font-size:16px;letter-spacing:4px;margin-bottom:32px;">FLOREER</p>
-      <p style="font-size:15px;margin-bottom:12px;">Ola! Seja bem-vinda</p>
-      <p style="font-size:14px;line-height:1.7;color:#7A756E;margin-bottom:28px;">
-        Sua compra foi confirmada e seu acesso ao Curso ${nome} esta liberado agora mesmo.
+      <p style="font-size:15px;margin-bottom:12px;">Sua compra foi confirmada! 🌸</p>
+      <p style="font-size:14px;line-height:1.7;color:#7A756E;margin-bottom:24px;">
+        Seu acesso ao Curso ${nome} está garantido. Para entrar na área da aluna,
+        crie a sua senha no botão abaixo:
       </p>
-      <a href="${siteUrl}/aluno" style="display:inline-block;background:#1A1815;color:#FAFAF8;padding:13px 30px;text-decoration:none;font-size:12px;letter-spacing:1.5px;border-radius:4px;margin-bottom:32px;">
-        ACESSAR MEU CURSO
+      <a href="${linkSenha}" style="display:inline-block;background:#1A1815;color:#FAFAF8;padding:13px 30px;text-decoration:none;font-size:12px;letter-spacing:1.5px;border-radius:4px;margin-bottom:14px;">
+        CRIAR MINHA SENHA E ACESSAR
       </a>
+      <p style="font-size:11px;color:#9A9188;margin-bottom:28px;">
+        Se o botão não funcionar, acesse ${siteUrl}/aluno/login e clique em
+        &quot;Esqueci minha senha&quot; usando este e-mail.
+      </p>
       <div style="background:#F3F0EB;border-radius:8px;padding:18px 22px;font-size:12px;color:#7A756E;line-height:1.9;margin-bottom:24px;">
-        E-mail: ${email}<br/>
-        Acesso: <a href="${siteUrl}/aluno" style="color:#B8864A;">${siteUrl}/aluno</a>
+        Seu login (e-mail): <strong style="color:#1A1815;">${email}</strong><br/>
+        Área da aluna: <a href="${siteUrl}/aluno/login" style="color:#B8864A;">${siteUrl}/aluno/login</a>
       </div>
       <p style="font-size:13px;color:#1A1815;font-weight:bold;margin-bottom:12px;">Entre na nossa comunidade no WhatsApp:</p>
       ${gruposHtml}
