@@ -118,16 +118,16 @@ function SucessoConteudo() {
               Seu acesso ao Curso {nomeCurso} esta liberado.
             </p>
             <p className="text-sm text-floreer-muted leading-relaxed mb-8">
-              Enviamos um email de boas-vindas com o link dos grupos do WhatsApp. Verifique sua caixa de entrada.
+              Enviamos um e-mail para voce <strong>criar sua senha</strong> e acessar o curso. Verifique sua caixa de entrada (e a aba Promocoes/Spam).
             </p>
           </>
         )}
 
         <Link href="/aluno/login" className="btn-primary inline-block mb-4">
-          Acessar meu curso
+          Ir para a area da aluna
         </Link>
         <p className="text-xs text-floreer-muted">
-          Use o email e a senha que voce criou durante a compra.
+          Crie sua senha pelo link do e-mail e depois entre com o seu e-mail.
         </p>
       </div>
     </div>
