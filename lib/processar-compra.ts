@@ -61,29 +61,19 @@ export async function processarCompra(
     pagamento_id: String(paymentId),
   });
 
-  // 3) Gera o link de criar senha.
-  let linkSenha = `${siteUrl}/aluno/login`;
-  try {
-    const { data: linkData } = await supabase.auth.admin.generateLink({
-      type: "recovery",
-      email: emailAluna,
-      options: { redirectTo: `${siteUrl}/aluno/nova-senha` },
-    });
-    if (linkData?.properties?.action_link) {
-      linkSenha = linkData.properties.action_link;
-    }
-  } catch (e) {
-    console.warn("processarCompra: erro ao gerar link de senha:", e);
-  }
+  // 3) Link de ativacao: aponta pra uma pagina intermediaria, a prova dos
+  // robos de e-mail (o link de senha de uso unico so e gerado quando a aluna
+  // clica no botao da pagina, e nao quando um robo abre o e-mail).
+  const linkAtivar = `${siteUrl}/aluno/ativar?pid=${paymentId}`;
 
-  // 4) Envia o e-mail de boas-vindas com o link de criar senha.
+  // 4) Envia o e-mail de boas-vindas.
   try {
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
       from: "Floreer <ola@floreer.com.br>",
       to: emailAluna,
       subject: `Compra confirmada — crie sua senha e acesse o Curso ${nomeCurso(cursoSlug)}`,
-      html: emailBoasVindas(emailAluna, cursoSlug, linkSenha),
+      html: emailBoasVindas(emailAluna, cursoSlug, linkAtivar),
     });
   } catch (e) {
     console.error("processarCompra: erro ao enviar e-mail:", e);
