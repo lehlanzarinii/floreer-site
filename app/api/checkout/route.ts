@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurso, florCompleta } from "../../../lib/cursos";
+import { createClient } from "@supabase/supabase-js";
+
+function getAdminSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_KEY!
+  );
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,7 +24,40 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ erro: "Curso nao encontrado" }, { status: 404 });
     }
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://floreer.com.br";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.floreer.com.br";
+
+    // Trava: nao deixa comprar de novo um curso que esse e-mail JA tem.
+    try {
+      const supabase = getAdminSupabase();
+      const { data: listData } = await supabase.auth.admin.listUsers();
+      const usuario = (listData?.users ?? []).find((u) => u.email === email);
+      if (usuario) {
+        const { data: comprasData } = await supabase
+          .from("compras")
+          .select("curso_slug")
+          .eq("usuario_id", usuario.id)
+          .eq("status", "aprovado");
+
+        const tem = new Set<string>();
+        (comprasData ?? []).forEach((c: { curso_slug: string }) => {
+          if (c.curso_slug === "flor-completa") {
+            tem.add("flor-completa"); tem.add("broto"); tem.add("botao"); tem.add("plena");
+          } else {
+            tem.add(c.curso_slug);
+          }
+        });
+
+        if (tem.has(cursoSlug)) {
+          return NextResponse.json(
+            { erro: "Voce ja tem esse curso.", jaTemCurso: true },
+            { status: 409 }
+          );
+        }
+      }
+    } catch (e) {
+      // Se a checagem falhar, nao trava a venda — apenas registra.
+      console.warn("checkout: nao foi possivel checar curso ja comprado:", e);
+    }
 
     const titulo = isBundle
       ? "Floreer - Flor Completa (Trilha Completa)"
@@ -24,8 +65,6 @@ export async function POST(req: NextRequest) {
     const preco = isBundle ? florCompleta.preco / 100 : curso!.preco / 100;
     const desc = isBundle ? florCompleta.desc : curso!.desc;
 
-    // A conta da aluna NÃO é criada aqui. Quem cria a conta e libera o acesso
-    // é o webhook, DEPOIS do pagamento aprovado (checkout enxuto = mais vendas).
     const mpResponse = await fetch("https://api.mercadopago.com/checkout/preferences", {
       method: "POST",
       headers: {
