@@ -9,15 +9,8 @@ export default function Navbar() {
     <nav className="bg-floreer-bg border-b border-floreer-border h-16 px-6 md:px-10 flex items-center justify-between sticky top-0 z-50">
       {/* Logo */}
       <Link href="/" className="flex items-center gap-2.5">
-        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-          <circle cx="11" cy="8" r="3.5" stroke="#B8864A" strokeWidth="1" />
-          <circle cx="5.5" cy="13" r="2.5" stroke="#B8864A" strokeWidth="0.8" />
-          <circle cx="16.5" cy="13" r="2.5" stroke="#B8864A" strokeWidth="0.8" />
-          <circle cx="8" cy="18" r="2" stroke="#B8864A" strokeWidth="0.8" />
-          <circle cx="14" cy="18" r="2" stroke="#B8864A" strokeWidth="0.8" />
-          <circle cx="11" cy="11" r="2" fill="#B8864A" />
-          <line x1="11" y1="13" x2="11" y2="21" stroke="#C8C0B5" strokeWidth="1" />
-        </svg>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo-flor-marrom.png" width={24} height={24} alt="Floreer" className="w-6 h-6" />
         <span className="font-serif text-[18px] text-floreer-dark tracking-[4px]">
           FLOREER
         </span>
