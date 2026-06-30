@@ -14,6 +14,7 @@ export default function CheckoutPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState("");
+  const [jaTemCurso, setJaTemCurso] = useState(false);
 
   if (!cursoData) return null;
 
@@ -21,6 +22,7 @@ export default function CheckoutPage() {
     e.preventDefault();
     setLoading(true);
     setErro("");
+    setJaTemCurso(false);
 
     // Pixel da Meta: usuária iniciou a finalização da compra
     const fbq = (window as unknown as { fbq?: (...a: unknown[]) => void }).fbq;
@@ -40,6 +42,11 @@ export default function CheckoutPage() {
         body: JSON.stringify({ cursoSlug: cursoData!.slug, email }),
       });
       const data = await res.json();
+      if (res.status === 409 && data.jaTemCurso) {
+        setJaTemCurso(true);
+        setLoading(false);
+        return;
+      }
       if (!res.ok) throw new Error(data.erro || "Erro ao processar");
       window.location.href = data.initPoint;
     } catch (err: unknown) {
@@ -119,6 +126,17 @@ export default function CheckoutPage() {
             Informe seu e-mail e vá direto para o pagamento. Depois de pagar, você recebe um e-mail para criar sua senha e acessar o curso.
           </p>
 
+          {jaTemCurso ? (
+            <div className="card p-6 text-center">
+              <p className="text-2xl mb-3">✓</p>
+              <p className="font-serif text-lg text-floreer-dark mb-2">Você já tem o curso {cursoData.nome}!</p>
+              <p className="text-sm text-floreer-muted mb-5">
+                Esse e-mail já comprou esse curso. É só entrar na área da aluna para acessar.
+              </p>
+              <Link href="/aluno/login" className="btn-primary inline-block">Entrar na minha conta</Link>
+            </div>
+          ) : (
+          <>
           {erro && (
             <div className="bg-red-50 border border-red-200 text-red-700 text-xs p-3 rounded mb-4">{erro}</div>
           )}
@@ -155,6 +173,8 @@ export default function CheckoutPage() {
             Já tem conta?{" "}
             <Link href="/aluno/login" className="text-floreer-gold">Entrar</Link>
           </p>
+          </>
+          )}
         </div>
       </div>
     </div>
