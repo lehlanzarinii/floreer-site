@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { getCurso, florCompleta } from "../../../lib/cursos";
+import { getCurso, florCompleta, geodo } from "../../../lib/cursos";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 
@@ -9,7 +9,8 @@ export default function CheckoutPage() {
   const slug = params.slug as string;
 
   const cursoIndividual = getCurso(slug);
-  const cursoData = cursoIndividual ?? (slug === "flor-completa" ? florCompleta : null);
+  const bundle = slug === "flor-completa" ? florCompleta : slug === "geodo" ? geodo : null;
+  const cursoData = cursoIndividual ?? bundle;
 
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -55,7 +56,7 @@ export default function CheckoutPage() {
     }
   }
 
-  const isCompleta = slug === "flor-completa";
+  const isCompleta = !!bundle;
 
   return (
     <div className="min-h-screen bg-floreer-bg grid md:grid-cols-2">
@@ -82,7 +83,7 @@ export default function CheckoutPage() {
               {isCompleta && (
                 <div className="flex justify-between text-xs text-floreer-muted mb-2">
                   <span>De</span>
-                  <span className="line-through">{florCompleta.precoOriginal}</span>
+                  <span className="line-through">{bundle!.precoOriginal}</span>
                 </div>
               )}
               <div className="flex justify-between text-xs text-floreer-muted mb-2">
@@ -91,8 +92,8 @@ export default function CheckoutPage() {
               </div>
               {isCompleta && (
                 <div className="flex justify-between text-xs text-green-600 mb-2">
-                  <span>Economia ({florCompleta.desconto} off)</span>
-                  <span>- {florCompleta.economia}</span>
+                  <span>Economia ({bundle!.desconto} off)</span>
+                  <span>- {bundle!.economia}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm font-medium text-floreer-dark">

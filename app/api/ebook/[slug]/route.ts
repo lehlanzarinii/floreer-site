@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
-const SLUGS_VALIDOS = ["broto", "botao", "plena"];
+const SLUGS_VALIDOS = ["broto", "botao", "plena", "lavanda", "violeta", "ametista"];
 
 function getAdminSupabase() {
   return createClient(
@@ -47,7 +47,9 @@ export async function GET(
     .eq("status", "aprovado");
 
   const slugsComprados = compras?.flatMap((c) =>
-    c.curso_slug === "flor-completa" ? ["broto", "botao", "plena"] : [c.curso_slug]
+    c.curso_slug === "flor-completa" ? ["broto", "botao", "plena"] :
+    c.curso_slug === "geodo" ? ["lavanda", "violeta", "ametista"] :
+    [c.curso_slug]
   ) || [];
 
   if (!slugsComprados.includes(slug)) {

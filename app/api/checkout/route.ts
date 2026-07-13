@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurso, florCompleta } from "../../../lib/cursos";
+import { getCurso, florCompleta, geodo } from "../../../lib/cursos";
 import { createClient } from "@supabase/supabase-js";
 
 function getAdminSupabase() {
@@ -17,7 +17,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ erro: "Informe um e-mail" }, { status: 400 });
     }
 
-    const isBundle = cursoSlug === "flor-completa";
+    const isBundle = cursoSlug === "flor-completa" || cursoSlug === "geodo";
+    const bundle = cursoSlug === "geodo" ? geodo : florCompleta;
     const curso = isBundle ? null : getCurso(cursoSlug);
 
     if (!isBundle && !curso) {
@@ -42,6 +43,8 @@ export async function POST(req: NextRequest) {
         (comprasData ?? []).forEach((c: { curso_slug: string }) => {
           if (c.curso_slug === "flor-completa") {
             tem.add("flor-completa"); tem.add("broto"); tem.add("botao"); tem.add("plena");
+          } else if (c.curso_slug === "geodo") {
+            tem.add("geodo"); tem.add("lavanda"); tem.add("violeta"); tem.add("ametista");
           } else {
             tem.add(c.curso_slug);
           }
@@ -60,10 +63,10 @@ export async function POST(req: NextRequest) {
     }
 
     const titulo = isBundle
-      ? "Floreer - Flor Completa (Trilha Completa)"
+      ? `Floreer - ${bundle.nome} (${bundle.nivel})`
       : `Floreer - Curso ${curso!.nome}`;
-    const preco = isBundle ? florCompleta.preco / 100 : curso!.preco / 100;
-    const desc = isBundle ? florCompleta.desc : curso!.desc;
+    const preco = isBundle ? bundle.preco / 100 : curso!.preco / 100;
+    const desc = isBundle ? bundle.desc : curso!.desc;
 
     const mpResponse = await fetch("https://api.mercadopago.com/checkout/preferences", {
       method: "POST",

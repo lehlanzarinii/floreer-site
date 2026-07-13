@@ -29,7 +29,9 @@ export default function AlunoPage() {
       ]);
 
       const slugs = comprasRes.data?.flatMap((c) =>
-        c.curso_slug === "flor-completa" ? ["broto", "botao", "plena"] : [c.curso_slug]
+        c.curso_slug === "flor-completa" ? ["broto", "botao", "plena"] :
+        c.curso_slug === "geodo" ? ["lavanda", "violeta", "ametista"] :
+        [c.curso_slug]
       ) || [];
       setCursosComprados(slugs);
       setCursosConcluidos(conclusoesRes.data?.map((c) => c.curso_slug) || []);
@@ -235,6 +237,36 @@ export default function AlunoPage() {
                   <div>
                     <p className="text-xs font-medium text-floreer-dark group-hover:text-floreer-gold transition-colors">Floreer Plena</p>
                     <p className="text-[10px] text-floreer-muted">Grupo exclusivo do Curso Plena</p>
+                  </div>
+                </a>
+              )}
+              {cursosComprados.includes("lavanda") && (
+                <a href="https://chat.whatsapp.com/FtoLUoZeApPJzYqAL2NTin" target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-3 border border-floreer-border rounded-lg px-4 py-3 hover:border-floreer-gold transition-colors group">
+                  <span className="text-lg">💜</span>
+                  <div>
+                    <p className="text-xs font-medium text-floreer-dark group-hover:text-floreer-gold transition-colors">Floreer Lavanda</p>
+                    <p className="text-[10px] text-floreer-muted">Grupo exclusivo do Curso Lavanda</p>
+                  </div>
+                </a>
+              )}
+              {cursosComprados.includes("violeta") && (
+                <a href="https://chat.whatsapp.com/IcsnNwwX8Fs7gMRJguCLoB" target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-3 border border-floreer-border rounded-lg px-4 py-3 hover:border-floreer-gold transition-colors group">
+                  <span className="text-lg">💜</span>
+                  <div>
+                    <p className="text-xs font-medium text-floreer-dark group-hover:text-floreer-gold transition-colors">Floreer Violeta</p>
+                    <p className="text-[10px] text-floreer-muted">Grupo exclusivo do Curso Violeta</p>
+                  </div>
+                </a>
+              )}
+              {cursosComprados.includes("ametista") && (
+                <a href="https://chat.whatsapp.com/Cvi3HVkTLlbBDkiLTL9cts" target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-3 border border-floreer-border rounded-lg px-4 py-3 hover:border-floreer-gold transition-colors group">
+                  <span className="text-lg">💜</span>
+                  <div>
+                    <p className="text-xs font-medium text-floreer-dark group-hover:text-floreer-gold transition-colors">Floreer Ametista</p>
+                    <p className="text-[10px] text-floreer-muted">Grupo exclusivo do Curso Ametista</p>
                   </div>
                 </a>
               )}

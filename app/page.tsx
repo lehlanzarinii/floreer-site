@@ -1,7 +1,7 @@
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import Link from "next/link";
-import { florCompleta } from "../lib/cursos";
+import { florCompleta, geodo } from "../lib/cursos";
 
 const cursos = [
   {
@@ -36,8 +36,40 @@ const cursos = [
   },
 ];
 
+const cursosUnha = [
+  {
+    slug: "lavanda",
+    nivel: "Unha de Fibra · Nível 1",
+    nome: "Lavanda",
+    desc: "Unha de fibra do zero — do preparo ao acabamento, com biossegurança.",
+    modulos: 7,
+    aulas: 35,
+    corHex: "#CDBCE6",
+    texto: "#3B2340",
+  },
+  {
+    slug: "violeta",
+    nivel: "Unha de Fibra · Nível 2",
+    nome: "Violeta",
+    desc: "Aperfeiçoamento — cutilagem avançada, acabamento que dura e correção de erros.",
+    modulos: 5,
+    aulas: 24,
+    corHex: "#6E5A88",
+    texto: "#FFFFFF",
+  },
+  {
+    slug: "ametista",
+    nivel: "Unha de Fibra · Nível 3",
+    nome: "Ametista",
+    desc: "Do hobby ao negócio — preço, portfólio, clientes e organização.",
+    modulos: 5,
+    aulas: 23,
+    corHex: "#3A2450",
+    texto: "#FFFFFF",
+  },
+];
+
 const emBreve = [
-  "Unhas",
   "Coloração pessoal",
   "Extensão de cílios",
   "Skincare",
@@ -109,7 +141,7 @@ export default function Home() {
             </Link>
           ))}
           <div className="px-7 py-4 bg-floreer-card border-t border-floreer-border">
-            <p className="text-[10px] text-floreer-muted">+ cursos de unhas, coloração, cílios, skincare e mais</p>
+            <p className="text-[10px] text-floreer-muted">+ cursos de coloração, cílios, skincare e mais</p>
           </div>
         </div>
       </section>
@@ -168,6 +200,61 @@ export default function Home() {
               className="flex-shrink-0 inline-block bg-floreer-gold text-floreer-dark text-xs font-medium px-8 py-3.5 rounded tracking-wide hover:opacity-90 transition-opacity"
             >
               Ver a Flor Completa →
+            </Link>
+          </div>
+        </div>
+
+        {/* UNHAS */}
+        <div className="mt-16 flex items-baseline justify-between mb-10">
+          <div>
+            <div className="label-tag mb-2">Unhas de fibra</div>
+            <h2 className="text-3xl text-floreer-dark">Da primeira unha ao seu próprio negócio</h2>
+          </div>
+          <Link href="/cursos" className="text-[11px] text-floreer-muted underline underline-offset-2 hidden md:block">
+            Ver todos
+          </Link>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-px bg-floreer-border rounded-xl overflow-hidden">
+          {cursosUnha.map((c) => (
+            <div key={c.slug} className="bg-floreer-bg flex flex-col">
+              <div className="h-40 p-6 flex flex-col justify-end" style={{ backgroundColor: c.corHex }}>
+                <p className="text-[9px] tracking-[2px] uppercase mb-1" style={{ color: c.texto, opacity: 0.6 }}>{c.nivel}</p>
+                <p className="font-serif text-[26px] italic" style={{ color: c.texto }}>{c.nome}</p>
+              </div>
+              <div className="p-6 flex flex-col flex-1">
+                <p className="text-xs text-floreer-muted leading-relaxed mb-4 flex-1">{c.desc}</p>
+                <div className="flex items-center justify-between border-t border-floreer-border pt-4">
+                  <span className="text-[10px] text-[#B0A89E]">{c.modulos} módulos · {c.aulas} slides</span>
+                  <Link href={`/cursos/${c.slug}`} className="text-[10px] tracking-wider uppercase text-floreer-gold font-medium">
+                    Saiba mais →
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Geodo */}
+        <div className="mt-8 rounded-xl overflow-hidden" style={{ backgroundColor: geodo.cor }}>
+          <div className="p-7 md:p-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div>
+              <span className="text-[9px] tracking-[2px] uppercase text-floreer-gold border border-floreer-gold/30 px-3 py-1 rounded-full mb-4 inline-block">
+                {geodo.desconto} de desconto
+              </span>
+              <h3 className="font-serif text-2xl italic text-floreer-bg mb-2">{geodo.nome}</h3>
+              <p className="text-sm text-[#BCAFD0] mb-3">{geodo.desc}</p>
+              <div className="flex items-baseline gap-3">
+                <span className="font-serif text-xl text-floreer-bg">{geodo.precoFormatado}</span>
+                <span className="text-sm text-[#7E7191] line-through">{geodo.precoOriginal}</span>
+                <span className="text-xs text-floreer-gold">economia de {geodo.economia}</span>
+              </div>
+            </div>
+            <Link
+              href="/checkout/geodo"
+              className="flex-shrink-0 inline-block bg-floreer-gold text-floreer-dark text-xs font-medium px-8 py-3.5 rounded tracking-wide hover:opacity-90 transition-opacity"
+            >
+              Adquirir o Geodo →
             </Link>
           </div>
         </div>

@@ -85,6 +85,7 @@ export async function processarCompra(
 export function nomeCurso(slug: string): string {
   const nomes: Record<string, string> = {
     broto: "Broto", botao: "Botao", plena: "Plena", "flor-completa": "Flor Completa",
+    lavanda: "Lavanda", violeta: "Violeta", ametista: "Ametista", geodo: "Geodo",
   };
   return nomes[slug] || slug.charAt(0).toUpperCase() + slug.slice(1);
 }
@@ -94,6 +95,10 @@ const LINKS_WHATSAPP: Record<string, string[]> = {
   botao: ["https://chat.whatsapp.com/KUOJt71q22rLFiFbvWKBU0", "https://chat.whatsapp.com/FJh8NKNzG2R9KLo16glaAN"],
   plena: ["https://chat.whatsapp.com/KUOJt71q22rLFiFbvWKBU0", "https://chat.whatsapp.com/LVPYjPf3cd65f9EHrlWpTS"],
   "flor-completa": ["https://chat.whatsapp.com/KUOJt71q22rLFiFbvWKBU0", "https://chat.whatsapp.com/GPpxohO0oDe8qEYxPthCRO", "https://chat.whatsapp.com/FJh8NKNzG2R9KLo16glaAN", "https://chat.whatsapp.com/LVPYjPf3cd65f9EHrlWpTS"],
+  lavanda: ["https://chat.whatsapp.com/KUOJt71q22rLFiFbvWKBU0", "https://chat.whatsapp.com/FtoLUoZeApPJzYqAL2NTin"],
+  violeta: ["https://chat.whatsapp.com/KUOJt71q22rLFiFbvWKBU0", "https://chat.whatsapp.com/IcsnNwwX8Fs7gMRJguCLoB"],
+  ametista: ["https://chat.whatsapp.com/KUOJt71q22rLFiFbvWKBU0", "https://chat.whatsapp.com/Cvi3HVkTLlbBDkiLTL9cts"],
+  geodo: ["https://chat.whatsapp.com/KUOJt71q22rLFiFbvWKBU0", "https://chat.whatsapp.com/FtoLUoZeApPJzYqAL2NTin", "https://chat.whatsapp.com/IcsnNwwX8Fs7gMRJguCLoB", "https://chat.whatsapp.com/Cvi3HVkTLlbBDkiLTL9cts"],
 };
 
 const NOMES_GRUPOS: Record<string, string[]> = {
@@ -101,6 +106,10 @@ const NOMES_GRUPOS: Record<string, string[]> = {
   botao: ["Floreer Comunidade", "Floreer Botao"],
   plena: ["Floreer Comunidade", "Floreer Plena"],
   "flor-completa": ["Floreer Comunidade", "Floreer Broto", "Floreer Botao", "Floreer Plena"],
+  lavanda: ["Floreer Comunidade", "Floreer Lavanda"],
+  violeta: ["Floreer Comunidade", "Floreer Violeta"],
+  ametista: ["Floreer Comunidade", "Floreer Ametista"],
+  geodo: ["Floreer Comunidade", "Floreer Lavanda", "Floreer Violeta", "Floreer Ametista"],
 };
 
 function emailBoasVindas(email: string, cursoSlug: string, linkSenha: string): string {
