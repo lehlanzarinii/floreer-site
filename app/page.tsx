@@ -251,7 +251,7 @@ export default function Home() {
               </div>
             </div>
             <Link
-              href="/checkout/geodo"
+              href="/geodo"
               className="flex-shrink-0 inline-block bg-floreer-gold text-floreer-dark text-xs font-medium px-8 py-3.5 rounded tracking-wide hover:opacity-90 transition-opacity"
             >
               Adquirir o Geodo →
