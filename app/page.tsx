@@ -105,8 +105,8 @@ export default function Home() {
       <Navbar />
 
       {/* HERO */}
-      <section className="px-6 md:px-10 py-16 md:py-24 grid md:grid-cols-2 gap-12 items-center">
-        <div>
+      <section className="px-6 md:px-10 py-16 md:py-24">
+        <div className="max-w-xl">
           <div className="label-tag mb-5">Educação em beleza</div>
           <h1 className="text-5xl md:text-6xl text-floreer-dark leading-[1.05] mb-5">
             Aprenda<br />a arte<br />da <em>beleza</em>
@@ -117,31 +117,6 @@ export default function Home() {
           <div className="flex gap-3 flex-wrap">
             <Link href="/cursos" className="btn-primary">Ver cursos</Link>
             <Link href="/sobre" className="btn-outline">Conheça a Floreer</Link>
-          </div>
-        </div>
-
-        {/* Course strips */}
-        <div className="flex flex-col gap-px border border-floreer-border rounded-xl overflow-hidden">
-          {cursos.map((c) => (
-            <Link
-              key={c.slug}
-              href={`/cursos/${c.slug}`}
-              className="flex items-center justify-between px-7 py-5 bg-floreer-bg hover:bg-floreer-card transition-colors"
-            >
-              <div className="flex items-center gap-4">
-                <div className={`w-2.5 h-2.5 rounded-full ${c.cor}`} />
-                <div>
-                  <p className="text-[10px] tracking-[1.5px] uppercase text-floreer-muted mb-1">{c.nivel}</p>
-                  <p className="font-serif text-lg italic text-floreer-dark">{c.nome}</p>
-                </div>
-              </div>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-floreer-muted">
-                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-              </svg>
-            </Link>
-          ))}
-          <div className="px-7 py-4 bg-floreer-card border-t border-floreer-border">
-            <p className="text-[10px] text-floreer-muted">+ cursos de coloração, cílios, skincare e mais</p>
           </div>
         </div>
       </section>
@@ -262,7 +237,7 @@ export default function Home() {
         {/* Em breve */}
         <div className="mt-8">
           <p className="text-[10px] tracking-[2px] uppercase text-floreer-muted mb-3">Em breve na plataforma</p>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-px bg-floreer-border rounded-xl overflow-hidden">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-floreer-border rounded-xl overflow-hidden">
             {emBreve.map((nome) => (
               <div key={nome} className="bg-floreer-card px-5 py-4">
                 <p className="text-[9px] tracking-[1.5px] uppercase text-floreer-gold mb-1">Breve</p>
