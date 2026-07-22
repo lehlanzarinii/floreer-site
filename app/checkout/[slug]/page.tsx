@@ -19,6 +19,10 @@ export default function CheckoutPage() {
 
   if (!cursoData) return null;
 
+  // Página de informações de cada compra (cursos individuais e combos)
+  const infoHref =
+    slug === "flor-completa" ? "/flor-completa" : slug === "geodo" ? "/geodo" : `/cursos/${slug}`;
+
   async function handleCompra(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -116,6 +120,15 @@ export default function CheckoutPage() {
               </div>
             ))}
           </div>
+
+          {/* Mais informações sobre o que está comprando */}
+          <Link
+            href={infoHref}
+            target="_blank"
+            className="inline-flex items-center gap-1.5 mt-6 text-[11px] tracking-wide uppercase text-floreer-gold underline underline-offset-4 hover:opacity-80 transition-opacity"
+          >
+            Ver todas as informações {isCompleta ? "do combo" : "do curso"} →
+          </Link>
         </div>
       </div>
 
